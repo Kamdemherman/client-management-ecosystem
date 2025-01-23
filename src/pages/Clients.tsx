@@ -266,7 +266,7 @@ const Clients = () => {
                   <SelectValue placeholder="Filtrer par région" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les régions</SelectItem>
+                  <SelectItem value="all">Toutes les régions</SelectItem>
                   <SelectItem value="Nord">Nord</SelectItem>
                   <SelectItem value="Sud">Sud</SelectItem>
                   <SelectItem value="Est">Est</SelectItem>
@@ -293,7 +293,7 @@ const Clients = () => {
                 {mockClients
                   .filter(client => 
                     client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                    (filterRegion ? client.region === filterRegion : true)
+                    (filterRegion === "all" || !filterRegion ? true : client.region === filterRegion)
                   )
                   .map((client) => (
                     <TableRow key={client.id}>
