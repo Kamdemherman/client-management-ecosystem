@@ -48,7 +48,8 @@ const mockClients: Client[] = [
     pendingOrders: 2,
     mostOrdered: "Aliments volaille",
     orderFrequency: "Hebdomadaire",
-    agency: "Agence Nord"
+    agency: "Agence Nord",
+    region: "Nord"
   },
   { 
     id: 2, 
@@ -64,7 +65,8 @@ const mockClients: Client[] = [
     pendingOrders: 1,
     mostOrdered: "Aliments bétail",
     orderFrequency: "Mensuel",
-    agency: "Agence Sud"
+    agency: "Agence Sud",
+    region: "Sud"
   },
   { 
     id: 3, 
@@ -80,7 +82,8 @@ const mockClients: Client[] = [
     pendingOrders: 0,
     mostOrdered: "Aliments volaille",
     orderFrequency: "Hebdomadaire",
-    agency: "Agence Est"
+    agency: "Agence Est",
+    region: "Est"
   },
 ];
 
