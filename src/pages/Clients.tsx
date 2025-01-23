@@ -91,6 +91,7 @@ const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   const handleDeleteClient = (clientId: number) => {
@@ -98,6 +99,22 @@ const Clients = () => {
       title: "Client supprimé",
       description: "Le client a été supprimé avec succès.",
     });
+  };
+
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+  };
+
+  const handleUpdateClient = (updatedClient: Partial<Client>) => {
+    if (editingClient) {
+      const updated = { ...editingClient, ...updatedClient };
+      // Ici, vous feriez normalement un appel API pour mettre à jour le client
+      toast({
+        title: "Client mis à jour",
+        description: "Les informations du client ont été mises à jour avec succès.",
+      });
+      setEditingClient(null);
+    }
   };
 
   return (
@@ -279,7 +296,7 @@ const Clients = () => {
                     (filterRegion ? client.region === filterRegion : true)
                   )
                   .map((client) => (
-                    <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableRow key={client.id}>
                       <TableCell className="flex items-center gap-2">
                         <Avatar>
                           <AvatarImage src={client.avatar} />
@@ -303,77 +320,109 @@ const Clients = () => {
                           <Button variant="ghost" size="icon" onClick={() => setSelectedClient(client)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Dialog>
+                          <Dialog open={editingClient?.id === client.id} onOpenChange={(open) => !open && setEditingClient(null)}>
                             <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditClient(client)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="sm:max-w-[625px]">
                               <DialogHeader>
                                 <DialogTitle>Modifier le client</DialogTitle>
                                 <DialogDescription>
                                   Modifiez les informations du client ci-dessous
                                 </DialogDescription>
                               </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-name">Nom et prénom</Label>
-                                    <Input id="edit-name" defaultValue={client.name} />
+                              <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const updatedClient = {
+                                  name: formData.get('name') as string,
+                                  email: formData.get('email') as string,
+                                  phone: formData.get('phone') as string,
+                                  address: formData.get('address') as string,
+                                  farmInfo: formData.get('farmInfo') as string,
+                                  status: formData.get('status') as "Actif" | "Inactif",
+                                };
+                                handleUpdateClient(updatedClient);
+                              }}>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-name">Nom et prénom</Label>
+                                      <Input 
+                                        id="edit-name" 
+                                        name="name"
+                                        defaultValue={editingClient?.name} 
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-email">Email</Label>
+                                      <Input 
+                                        id="edit-email" 
+                                        name="email"
+                                        type="email" 
+                                        defaultValue={editingClient?.email} 
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-phone">Téléphone</Label>
+                                      <Input 
+                                        id="edit-phone" 
+                                        name="phone"
+                                        defaultValue={editingClient?.phone} 
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-clientId">Identifiant client</Label>
+                                      <Input 
+                                        id="edit-clientId" 
+                                        defaultValue={editingClient?.clientId} 
+                                        disabled 
+                                      />
+                                    </div>
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-email">Email</Label>
-                                    <Input id="edit-email" type="email" defaultValue={client.email} />
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-phone">Téléphone</Label>
-                                    <Input id="edit-phone" defaultValue={client.phone} />
+                                    <Label htmlFor="edit-address">Adresse postale</Label>
+                                    <Textarea 
+                                      id="edit-address" 
+                                      name="address"
+                                      defaultValue={editingClient?.address} 
+                                    />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-clientId">Identifiant client</Label>
-                                    <Input id="edit-clientId" defaultValue={client.clientId} />
+                                    <Label htmlFor="edit-farmInfo">Informations d'élevage</Label>
+                                    <Textarea 
+                                      id="edit-farmInfo" 
+                                      name="farmInfo"
+                                      defaultValue={editingClient?.farmInfo}
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-status">Statut</Label>
+                                      <Select name="status" defaultValue={editingClient?.status}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Sélectionner un statut" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Actif">Actif</SelectItem>
+                                          <SelectItem value="Inactif">Inactif</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="edit-avatar">Photo de profil</Label>
+                                      <Input id="edit-avatar" type="file" accept="image/*" />
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-address">Adresse postale</Label>
-                                  <Textarea id="edit-address" defaultValue={client.address} />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-farmInfo">Informations d'élevage</Label>
-                                  <Textarea 
-                                    id="edit-farmInfo" 
-                                    defaultValue={client.farmInfo}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-status">Statut</Label>
-                                    <Select defaultValue={client.status}>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un statut" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="actif">Actif</SelectItem>
-                                        <SelectItem value="inactif">Inactif</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="edit-password">Mot de passe temporaire</Label>
-                                    <Input id="edit-password" type="password" />
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-avatar">Photo de profil</Label>
-                                  <Input id="edit-avatar" type="file" accept="image/*" />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit">Enregistrer</Button>
-                              </DialogFooter>
+                                <DialogFooter>
+                                  <Button type="submit">Enregistrer les modifications</Button>
+                                </DialogFooter>
+                              </form>
                             </DialogContent>
                           </Dialog>
                           <AlertDialog>
