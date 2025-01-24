@@ -223,7 +223,7 @@ const Inventory = () => {
                     <SelectValue placeholder="Filtrer par statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les statuts</SelectItem>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
                     <SelectItem value="En stock">En stock</SelectItem>
                     <SelectItem value="Stock faible">Stock faible</SelectItem>
                     <SelectItem value="Rupture de stock">Rupture de stock</SelectItem>

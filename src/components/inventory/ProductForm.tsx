@@ -101,8 +101,9 @@ export const ProductForm = ({ product, onSubmit }: ProductFormProps) => {
             />
           </div>
           <div className="space-y-2">
+
             <Label htmlFor="status">Statut</Label>
-            <Select name="status" defaultValue={product?.status}>
+            <Select name="status" defaultValue={product?.status || "En stock"}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un statut" />
               </SelectTrigger>
@@ -112,6 +113,7 @@ export const ProductForm = ({ product, onSubmit }: ProductFormProps) => {
                 <SelectItem value="Rupture de stock">Rupture de stock</SelectItem>
               </SelectContent>
             </Select>
+
           </div>
         </div>
       </div>
