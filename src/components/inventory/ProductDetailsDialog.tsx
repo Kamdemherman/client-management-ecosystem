@@ -26,7 +26,7 @@ export const ProductDetailsDialog = ({
       case "En stock":
         return "default";
       case "Stock faible":
-        return "warning";
+        return "secondary";
       case "Rupture de stock":
         return "destructive";
       default:
