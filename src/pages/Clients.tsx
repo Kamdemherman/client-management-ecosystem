@@ -13,25 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserPlus, Search, Users, Trash2, Edit, Eye } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Client {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  farmInfo: string;
-  clientId: string;
-  status: "Actif" | "Inactif";
-  orders: number;
-  avatar?: string;
-  region: string;
-  volume: string;
-  pendingOrders: number;
-  mostOrdered: string;
-  orderFrequency: string;
-  agency: string;
-}
+import { ClientDetailsDialog } from "@/components/clients/ClientDetailsDialog";
+import { Client } from "@/types/client";
 
 const mockClients: Client[] = [
   { 
@@ -87,11 +70,14 @@ const mockClients: Client[] = [
   },
 ];
 
+const ITEMS_PER_PAGE = 5;
+
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   const handleDeleteClient = (clientId: number) => {
@@ -108,7 +94,6 @@ const Clients = () => {
   const handleUpdateClient = (updatedClient: Partial<Client>) => {
     if (editingClient) {
       const updated = { ...editingClient, ...updatedClient };
-      // Ici, vous feriez normalement un appel API pour mettre à jour le client
       toast({
         title: "Client mis à jour",
         description: "Les informations du client ont été mises à jour avec succès.",
@@ -116,6 +101,17 @@ const Clients = () => {
       setEditingClient(null);
     }
   };
+
+  const filteredClients = mockClients.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterRegion === "all" || !filterRegion ? true : client.region === filterRegion)
+  );
+
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+  const paginatedClients = filteredClients.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <DashboardLayout>
@@ -290,175 +286,207 @@ const Clients = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockClients
-                  .filter(client => 
-                    client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                    (filterRegion === "all" || !filterRegion ? true : client.region === filterRegion)
-                  )
-                  .map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="flex items-center gap-2">
-                        <Avatar>
-                          <AvatarImage src={client.avatar} />
-                          <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        {client.name}
-                      </TableCell>
-                      <TableCell>{client.region}</TableCell>
-                      <TableCell>{client.agency}</TableCell>
-                      <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
-                      <TableCell>{client.pendingOrders}</TableCell>
-                      <TableCell>{client.mostOrdered}</TableCell>
-                      <TableCell>{client.orderFrequency}</TableCell>
-                      <TableCell>
-                        <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
-                          {client.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedClient(client)}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Dialog open={editingClient?.id === client.id} onOpenChange={(open) => !open && setEditingClient(null)}>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleEditClient(client)}>
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[625px]">
-                              <DialogHeader>
-                                <DialogTitle>Modifier le client</DialogTitle>
-                                <DialogDescription>
-                                  Modifiez les informations du client ci-dessous
-                                </DialogDescription>
-                              </DialogHeader>
-                              <form onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                const updatedClient = {
-                                  name: formData.get('name') as string,
-                                  email: formData.get('email') as string,
-                                  phone: formData.get('phone') as string,
-                                  address: formData.get('address') as string,
-                                  farmInfo: formData.get('farmInfo') as string,
-                                  status: formData.get('status') as "Actif" | "Inactif",
-                                };
-                                handleUpdateClient(updatedClient);
-                              }}>
-                                <div className="grid gap-4 py-4">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-name">Nom et prénom</Label>
-                                      <Input 
-                                        id="edit-name" 
-                                        name="name"
-                                        defaultValue={editingClient?.name} 
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-email">Email</Label>
-                                      <Input 
-                                        id="edit-email" 
-                                        name="email"
-                                        type="email" 
-                                        defaultValue={editingClient?.email} 
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-phone">Téléphone</Label>
-                                      <Input 
-                                        id="edit-phone" 
-                                        name="phone"
-                                        defaultValue={editingClient?.phone} 
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-clientId">Identifiant client</Label>
-                                      <Input 
-                                        id="edit-clientId" 
-                                        defaultValue={editingClient?.clientId} 
-                                        disabled 
-                                      />
-                                    </div>
-                                  </div>
+                {paginatedClients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="flex items-center gap-2">
+                      <Avatar>
+                        <AvatarImage src={client.avatar} />
+                        <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {client.name}
+                    </TableCell>
+                    <TableCell>{client.region}</TableCell>
+                    <TableCell>{client.agency}</TableCell>
+                    <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
+                    <TableCell>{client.pendingOrders}</TableCell>
+                    <TableCell>{client.mostOrdered}</TableCell>
+                    <TableCell>{client.orderFrequency}</TableCell>
+                    <TableCell>
+                      <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
+                        {client.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setSelectedClient(client)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Dialog open={editingClient?.id === client.id} onOpenChange={(open) => !open && setEditingClient(null)}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => handleEditClient(client)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[625px]">
+                            <DialogHeader>
+                              <DialogTitle>Modifier le client</DialogTitle>
+                              <DialogDescription>
+                                Modifiez les informations du client ci-dessous
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={(e) => {
+                              e.preventDefault();
+                              const formData = new FormData(e.currentTarget);
+                              const updatedClient = {
+                                name: formData.get('name') as string,
+                                email: formData.get('email') as string,
+                                phone: formData.get('phone') as string,
+                                address: formData.get('address') as string,
+                                farmInfo: formData.get('farmInfo') as string,
+                                status: formData.get('status') as "Actif" | "Inactif",
+                              };
+                              handleUpdateClient(updatedClient);
+                            }}>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-address">Adresse postale</Label>
-                                    <Textarea 
-                                      id="edit-address" 
-                                      name="address"
-                                      defaultValue={editingClient?.address} 
+                                    <Label htmlFor="edit-name">Nom et prénom</Label>
+                                    <Input 
+                                      id="edit-name" 
+                                      name="name"
+                                      defaultValue={editingClient?.name} 
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="edit-farmInfo">Informations d'élevage</Label>
-                                    <Textarea 
-                                      id="edit-farmInfo" 
-                                      name="farmInfo"
-                                      defaultValue={editingClient?.farmInfo}
+                                    <Label htmlFor="edit-email">Email</Label>
+                                    <Input 
+                                      id="edit-email" 
+                                      name="email"
+                                      type="email" 
+                                      defaultValue={editingClient?.email} 
                                     />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-status">Statut</Label>
-                                      <Select name="status" defaultValue={editingClient?.status}>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Sélectionner un statut" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Actif">Actif</SelectItem>
-                                          <SelectItem value="Inactif">Inactif</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-avatar">Photo de profil</Label>
-                                      <Input id="edit-avatar" type="file" accept="image/*" />
-                                    </div>
                                   </div>
                                 </div>
-                                <DialogFooter>
-                                  <Button type="submit">Enregistrer les modifications</Button>
-                                </DialogFooter>
-                              </form>
-                            </DialogContent>
-                          </Dialog>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Cette action est irréversible. Cela supprimera définitivement le compte client
-                                  et toutes les données associées.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteClient(client.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Supprimer
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-phone">Téléphone</Label>
+                                    <Input 
+                                      id="edit-phone" 
+                                      name="phone"
+                                      defaultValue={editingClient?.phone} 
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-clientId">Identifiant client</Label>
+                                    <Input 
+                                      id="edit-clientId" 
+                                      defaultValue={editingClient?.clientId} 
+                                      disabled 
+                                    />
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-address">Adresse postale</Label>
+                                  <Textarea 
+                                    id="edit-address" 
+                                    name="address"
+                                    defaultValue={editingClient?.address} 
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="edit-farmInfo">Informations d'élevage</Label>
+                                  <Textarea 
+                                    id="edit-farmInfo" 
+                                    name="farmInfo"
+                                    defaultValue={editingClient?.farmInfo}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-status">Statut</Label>
+                                    <Select name="status" defaultValue={editingClient?.status}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un statut" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Actif">Actif</SelectItem>
+                                        <SelectItem value="Inactif">Inactif</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-password">Nouveau mot de passe</Label>
+                                    <Input 
+                                      id="edit-password" 
+                                      name="password"
+                                      type="password"
+                                      placeholder="Laisser vide pour ne pas modifier"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button type="submit">Enregistrer les modifications</Button>
+                              </DialogFooter>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action est irréversible. Cela supprimera définitivement le compte client
+                                et toutes les données associées.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteClient(client.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
+
+            <div className="flex items-center justify-between space-x-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Précédent
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Suivant
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      <ClientDetailsDialog 
+        client={selectedClient}
+        open={!!selectedClient}
+        onOpenChange={(open) => !open && setSelectedClient(null)}
+      />
     </DashboardLayout>
   );
 };
