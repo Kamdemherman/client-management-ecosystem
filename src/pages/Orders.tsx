@@ -10,6 +10,9 @@ import { Search, ShoppingCart, Eye, Package, Trash2, Clock } from "lucide-react"
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
+import { InvoiceGenerator } from "@/components/invoices/InvoiceGenerator";
+import { ReservationCalendar } from "@/components/reservations/ReservationCalendar";
 
 // Mock data for orders
 const mockOrders = [
@@ -130,154 +133,168 @@ const Orders = () => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Liste des Commandes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher une commande..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des Commandes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher une commande..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrer par statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="En attente">En attente</SelectItem>
+                    <SelectItem value="En cours">En cours</SelectItem>
+                    <SelectItem value="Livrée">Livrée</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select
-                value={statusFilter}
-                onValueChange={setStatusFilter}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="En attente">En attente</SelectItem>
-                  <SelectItem value="En cours">En cours</SelectItem>
-                  <SelectItem value="Livrée">Livrée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.id}</TableCell>
-                    <TableCell>{order.client}</TableCell>
-                    <TableCell>{order.date}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.status as keyof typeof statusColors]}`}>
-                        {order.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{order.total}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Détails de la Commande {order.id}</DialogTitle>
-                              <DialogDescription>
-                                <div className="mt-4 space-y-4">
-                                  <div>
-                                    <p className="font-medium">Client</p>
-                                    <p className="text-sm text-gray-600">{order.client}</p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Articles</p>
-                                    <p className="text-sm text-gray-600">{order.items}</p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Date</p>
-                                    <p className="text-sm text-gray-600">{order.date}</p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Total</p>
-                                    <p className="text-sm text-gray-600">{order.total}</p>
-                                  </div>
-                                </div>
-                              </DialogDescription>
-                            </DialogHeader>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Select
-                          defaultValue={order.status}
-                          onValueChange={(value) => handleUpdateStatus(order.id, value)}
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="En attente">En attente</SelectItem>
-                            <SelectItem value="En cours">En cours</SelectItem>
-                            <SelectItem value="Livrée">Livrée</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteOrder(order.id)}>
-                                Supprimer
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Paiement</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.id}</TableCell>
+                      <TableCell>{order.client}</TableCell>
+                      <TableCell>{order.date}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.status as keyof typeof statusColors]}`}>
+                          {order.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <PaymentStatusBadge status="pending" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Détails de la Commande {order.id}</DialogTitle>
+                                <DialogDescription>
+                                  <div className="mt-4 grid gap-6 md:grid-cols-2">
+                                    <div className="space-y-4">
+                                      <div>
+                                        <p className="font-medium">Client</p>
+                                        <p className="text-sm text-gray-600">{order.client}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Articles</p>
+                                        <p className="text-sm text-gray-600">{order.items}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Date</p>
+                                        <p className="text-sm text-gray-600">{order.date}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Total</p>
+                                        <p className="text-sm text-gray-600">{order.total}</p>
+                                      </div>
+                                    </div>
+                                    <InvoiceGenerator
+                                      orderId={order.id}
+                                      clientName={order.client}
+                                      amount={order.total}
+                                      date={order.date}
+                                    />
+                                  </div>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
 
-            <div className="mt-4">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious href="#" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext href="#" />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          </CardContent>
-        </Card>
+                          <Select
+                            defaultValue={order.status}
+                            onValueChange={(value) => handleUpdateStatus(order.id, value)}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="En attente">En attente</SelectItem>
+                              <SelectItem value="En cours">En cours</SelectItem>
+                              <SelectItem value="Livrée">Livrée</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteOrder(order.id)}>
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <div className="mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#">1</PaginationLink>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext href="#" />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            </CardContent>
+          </Card>
+
+          <ReservationCalendar />
+        </div>
       </div>
     </DashboardLayout>
   );
