@@ -10,6 +10,8 @@ import Orders from "./pages/Orders";
 import Inventory from "./pages/Inventory";
 import Invoices from "./pages/Invoices";
 import Complaints from "./pages/Complaints";
+import Reservations from "./pages/Reservations";
+import Deliveries from "./pages/Deliveries";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/agencies" element={<Agencies />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/reservations" element={<Reservations />} />
+          <Route path="/deliveries" element={<Deliveries />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/complaints" element={<Complaints />} />
         </Routes>

@@ -1,6 +1,17 @@
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
-import { Home, Users, Building2, ShoppingCart, Package, FileText, MessageSquare, LogOut } from "lucide-react";
+import { 
+  Home, 
+  Users, 
+  Building2, 
+  ShoppingCart, 
+  Package, 
+  FileText, 
+  MessageSquare, 
+  LogOut,
+  Calendar,
+  Truck
+} from "lucide-react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,6 +26,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Building2, label: "Agences", path: "/agencies" },
     { icon: ShoppingCart, label: "Commandes", path: "/orders" },
     { icon: Package, label: "Stock", path: "/inventory" },
+    { icon: Calendar, label: "Réservations", path: "/reservations" },
+    { icon: Truck, label: "Livraisons", path: "/deliveries" },
     { icon: FileText, label: "Factures", path: "/invoices" },
     { icon: MessageSquare, label: "Plaintes", path: "/complaints" },
   ];
