@@ -7,6 +7,7 @@ import { MessageSquare, Plus } from "lucide-react";
 import { useState } from "react";
 import { ComplaintDialog } from "@/components/complaints/ComplaintDialog";
 import { useToast } from "@/hooks/use-toast";
+import { ComplaintStatus } from "@/types/complaint";
 
 interface Complaint {
   id: number;
@@ -14,7 +15,7 @@ interface Complaint {
   date: string;
   subject: string;
   description: string;
-  status: "En cours" | "Résolu" | "En attente";
+  status: ComplaintStatus;
 }
 
 const mockComplaints: Complaint[] = [
@@ -50,7 +51,7 @@ const Complaints = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleStatusUpdate = (complaintId: number, newStatus: Complaint["status"]) => {
+  const handleStatusUpdate = (complaintId: number, newStatus: ComplaintStatus) => {
     setComplaints(prevComplaints =>
       prevComplaints.map(complaint =>
         complaint.id === complaintId
@@ -78,14 +79,13 @@ const Complaints = () => {
     });
   };
 
-  const getStatusBadgeVariant = (status: Complaint["status"]) => {
+  const getStatusBadgeVariant = (status: ComplaintStatus): "default" | "secondary" | "outline" => {
     switch (status) {
       case "En cours":
-        return "warning";
-      case "Résolu":
-        return "success";
-      case "En attente":
         return "secondary";
+      case "Résolu":
+        return "outline";
+      case "En attente":
       default:
         return "default";
     }

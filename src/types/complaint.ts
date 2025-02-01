@@ -1,0 +1,1 @@
+export type ComplaintStatus = "En cours" | "Résolu" | "En attente";

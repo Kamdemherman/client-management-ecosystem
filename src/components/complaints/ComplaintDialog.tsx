@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { ComplaintStatus } from "@/types/complaint";
 
 interface ComplaintDialogProps {
   open: boolean;
@@ -13,15 +14,15 @@ interface ComplaintDialogProps {
     client: string;
     subject: string;
     description: string;
-    status: "En cours" | "Résolu" | "En attente";
+    status: ComplaintStatus;
   } | null;
   onSubmit: (complaint: {
     client: string;
     subject: string;
     description: string;
-    status: "En cours" | "Résolu" | "En attente";
+    status: ComplaintStatus;
   }) => void;
-  onStatusChange: (id: number, status: "En cours" | "Résolu" | "En attente") => void;
+  onStatusChange: (id: number, status: ComplaintStatus) => void;
 }
 
 export const ComplaintDialog = ({
@@ -31,11 +32,16 @@ export const ComplaintDialog = ({
   onSubmit,
   onStatusChange,
 }: ComplaintDialogProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    client: string;
+    subject: string;
+    description: string;
+    status: ComplaintStatus;
+  }>({
     client: "",
     subject: "",
     description: "",
-    status: "En attente" as const,
+    status: "En attente",
   });
 
   useEffect(() => {
@@ -120,7 +126,7 @@ export const ComplaintDialog = ({
             </label>
             <Select
               value={formData.status}
-              onValueChange={(value: "En cours" | "Résolu" | "En attente") =>
+              onValueChange={(value: ComplaintStatus) =>
                 setFormData((prev) => ({ ...prev, status: value }))
               }
             >
