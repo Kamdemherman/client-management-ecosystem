@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { fr } from "date-fns/locale";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,22 @@ export const ReservationCalendar = () => {
     );
   };
 
+  const findNextAvailableDate = (startDate: Date): Date => {
+    let currentDate = startDate;
+    let daysChecked = 0;
+    
+    while (daysChecked < 30) { // Limit search to next 30 days
+      const reservationsForDay = getReservationsForDate(currentDate);
+      if (reservationsForDay.length < MAX_RESERVATIONS_PER_DAY) {
+        return currentDate;
+      }
+      currentDate = addDays(currentDate, 1);
+      daysChecked++;
+    }
+    
+    return addDays(startDate, 1); // Return next day if no slots found
+  };
+
   const handleAddReservation = () => {
     if (!selectedDate || !clientName || !productName || !quantity) {
       toast({
@@ -61,11 +77,13 @@ export const ReservationCalendar = () => {
     const reservationsForDate = getReservationsForDate(selectedDate);
     
     if (reservationsForDate.length >= MAX_RESERVATIONS_PER_DAY) {
+      const nextAvailableDate = findNextAvailableDate(addDays(selectedDate, 1));
       toast({
         title: "Jour saturé",
-        description: "Le nombre maximum de réservations pour ce jour est atteint. Veuillez choisir une autre date.",
+        description: `Le nombre maximum de réservations pour ce jour est atteint. Prochaine date disponible: ${format(nextAvailableDate, 'dd/MM/yyyy')}`,
         variant: "destructive"
       });
+      setSelectedDate(nextAvailableDate);
       return;
     }
 
