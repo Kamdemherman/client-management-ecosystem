@@ -20,6 +20,8 @@ interface Reservation {
   status: "pending" | "confirmed" | "completed";
 }
 
+const MAX_RESERVATIONS_PER_DAY = 5;
+
 export const ReservationCalendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -29,7 +31,6 @@ export const ReservationCalendar = () => {
   const [quantity, setQuantity] = useState("");
   const { toast } = useToast();
 
-  // Mock data pour les réservations
   const [reservations, setReservations] = useState<Reservation[]>([
     {
       id: "1",
@@ -41,11 +42,28 @@ export const ReservationCalendar = () => {
     }
   ]);
 
+  const getReservationsForDate = (date: Date) => {
+    return reservations.filter(res => 
+      format(res.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    );
+  };
+
   const handleAddReservation = () => {
     if (!selectedDate || !clientName || !productName || !quantity) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reservationsForDate = getReservationsForDate(selectedDate);
+    
+    if (reservationsForDate.length >= MAX_RESERVATIONS_PER_DAY) {
+      toast({
+        title: "Jour saturé",
+        description: "Le nombre maximum de réservations pour ce jour est atteint. Veuillez choisir une autre date.",
         variant: "destructive"
       });
       return;
@@ -168,7 +186,10 @@ export const ReservationCalendar = () => {
             />
           </div>
           <div className="space-y-4">
-            <h3 className="font-medium">Réservations du jour</h3>
+            <h3 className="font-medium">
+              Réservations du jour 
+              ({date && getReservationsForDate(date).length}/{MAX_RESERVATIONS_PER_DAY})
+            </h3>
             <div className="space-y-2">
               {reservations
                 .filter(res => date && format(res.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
