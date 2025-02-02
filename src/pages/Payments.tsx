@@ -4,18 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
-import { format } from "date-fns";
-
-interface Payment {
-  id: string;
-  date: string;
-  amount: string;
-  method: string;
-  status: "pending" | "paid" | "overdue" | "cancelled";
-  reference: string;
-  client: string;
-}
+import { Badge } from "@/components/ui/badge";
+import type { Payment } from "@/types/payment";
 
 const Payments = () => {
   const [payments] = useState<Payment[]>([
@@ -24,18 +14,64 @@ const Payments = () => {
       date: "2024-02-01",
       amount: "1500€",
       method: "Carte bancaire",
-      status: "paid",
+      status: "completed",
       reference: "INV-001",
       client: "Jean Dupont"
     },
-    // Ajoutez plus de paiements ici
+    {
+      id: "PAY002",
+      date: "2024-02-02",
+      amount: "2300€",
+      method: "Virement",
+      status: "pending",
+      reference: "INV-002",
+      client: "Marie Martin"
+    },
+    {
+      id: "PAY003",
+      date: "2024-02-03",
+      amount: "800€",
+      method: "Carte bancaire",
+      status: "failed",
+      reference: "INV-003",
+      client: "Pierre Durand"
+    }
   ]);
+
+  const getStatusBadgeVariant = (status: Payment["status"]) => {
+    switch (status) {
+      case "completed":
+        return "success";
+      case "pending":
+        return "warning";
+      case "failed":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const getStatusLabel = (status: Payment["status"]) => {
+    switch (status) {
+      case "completed":
+        return "Complété";
+      case "pending":
+        return "En attente";
+      case "failed":
+        return "Échoué";
+      default:
+        return status;
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Gestion des Paiements</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Historique des Paiements</h1>
+            <p className="text-muted-foreground">Consultez et gérez les paiements</p>
+          </div>
           <Button>Nouveau Paiement</Button>
         </div>
 
@@ -45,9 +81,7 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Total des Paiements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {payments.reduce((acc, payment) => acc + parseInt(payment.amount), 0)}€
-              </div>
+              <div className="text-2xl font-bold">4600€</div>
             </CardContent>
           </Card>
           <Card>
@@ -55,9 +89,7 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Paiements en Attente</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {payments.filter(p => p.status === "pending").length}
-              </div>
+              <div className="text-2xl font-bold">1</div>
             </CardContent>
           </Card>
           <Card>
@@ -65,16 +97,14 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Paiements Réussis</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {payments.filter(p => p.status === "paid").length}
-              </div>
+              <div className="text-2xl font-bold">2</div>
             </CardContent>
           </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Historique des Paiements</CardTitle>
+            <CardTitle>Liste des Paiements</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -92,6 +122,7 @@ const Payments = () => {
                     <TableHead>Montant</TableHead>
                     <TableHead>Méthode</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -103,7 +134,16 @@ const Payments = () => {
                       <TableCell>{payment.amount}</TableCell>
                       <TableCell>{payment.method}</TableCell>
                       <TableCell>
-                        <PaymentStatusBadge status={payment.status} />
+                        <Badge variant={getStatusBadgeVariant(payment.status)}>
+                          {getStatusLabel(payment.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            Détails
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
