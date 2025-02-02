@@ -16,7 +16,7 @@ const ITEMS_PER_PAGE = 10;
 
 const Orders = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([
@@ -28,7 +28,7 @@ const Orders = () => {
       total: "1500€",
       items: "Engrais Bio (x3), Pesticides Naturels (x2)",
     },
-    // ... Ajoutez plus de commandes ici
+    // ... keep existing code (other orders data)
   ]);
 
   const filteredOrders = orders.filter(order => {
@@ -52,7 +52,7 @@ const Orders = () => {
     });
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
+  const handleUpdateStatus = (orderId: string, newStatus: Order["status"]) => {
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
@@ -61,6 +61,8 @@ const Orders = () => {
       description: `Le statut de la commande ${orderId} a été mis à jour à "${newStatus}".`,
     });
   };
+
+  // ... keep existing code (JSX and UI components)
 
   return (
     <DashboardLayout>
@@ -105,7 +107,7 @@ const Orders = () => {
               </div>
               <Select
                 value={statusFilter}
-                onValueChange={setStatusFilter}
+                onValueChange={(value: typeof statusFilter) => setStatusFilter(value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filtrer par statut" />
