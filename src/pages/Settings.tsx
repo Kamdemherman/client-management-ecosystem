@@ -4,8 +4,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 const Settings = () => {
+  const [settings, setSettings] = useState({
+    companyName: "AgriManager",
+    email: "contact@agrimanager.com",
+    currency: "EUR",
+    vatRate: "20",
+    deliveryDelay: "2",
+    emailNotifications: true,
+    smsNotifications: false,
+    logo: "",
+    primaryColor: "#00ff00",
+  });
+
+  const handleSave = () => {
+    console.log("Sauvegarde des paramètres:", settings);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -15,7 +33,7 @@ const Settings = () => {
           <TabsList>
             <TabsTrigger value="general">Général</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
+            <TabsTrigger value="appearance">Apparence</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -26,13 +44,58 @@ const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Nom de l'entreprise</Label>
-                  <Input id="company-name" defaultValue="AgriManager" />
+                  <Input
+                    id="company-name"
+                    value={settings.companyName}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, companyName: e.target.value }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email de contact</Label>
-                  <Input id="email" type="email" defaultValue="contact@agrimanager.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={settings.email}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                  />
                 </div>
-                <Button>Sauvegarder les modifications</Button>
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Devise</Label>
+                  <Input
+                    id="currency"
+                    value={settings.currency}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, currency: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vat">Taux de TVA (%)</Label>
+                  <Input
+                    id="vat"
+                    type="number"
+                    value={settings.vatRate}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, vatRate: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="delivery">Délai de livraison (jours)</Label>
+                  <Input
+                    id="delivery"
+                    type="number"
+                    value={settings.deliveryDelay}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, deliveryDelay: e.target.value }))
+                    }
+                  />
+                </div>
+                <Button onClick={handleSave}>Sauvegarder les modifications</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -43,43 +106,70 @@ const Settings = () => {
                 <CardTitle>Paramètres de Notifications</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Notifications par email</Label>
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="email-orders" className="rounded" />
-                      <label htmlFor="email-orders">Nouvelles commandes</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="email-complaints" className="rounded" />
-                      <label htmlFor="email-complaints">Nouvelles plaintes</label>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-notifications">Notifications par email</Label>
+                  <Switch
+                    id="email-notifications"
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) =>
+                      setSettings((prev) => ({ ...prev, emailNotifications: checked }))
+                    }
+                  />
                 </div>
-                <Button>Sauvegarder les préférences</Button>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="sms-notifications">Notifications par SMS</Label>
+                  <Switch
+                    id="sms-notifications"
+                    checked={settings.smsNotifications}
+                    onCheckedChange={(checked) =>
+                      setSettings((prev) => ({ ...prev, smsNotifications: checked }))
+                    }
+                  />
+                </div>
+                <Button onClick={handleSave}>Sauvegarder les préférences</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="security">
+          <TabsContent value="appearance">
             <Card>
               <CardHeader>
-                <CardTitle>Sécurité</CardTitle>
+                <CardTitle>Personnalisation</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="current-password">Mot de passe actuel</Label>
-                  <Input id="current-password" type="password" />
+                  <Label htmlFor="logo">Logo</Label>
+                  <Input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setSettings((prev) => ({
+                            ...prev,
+                            logo: reader.result as string,
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">Nouveau mot de passe</Label>
-                  <Input id="new-password" type="password" />
+                  <Label htmlFor="primary-color">Couleur principale</Label>
+                  <Input
+                    id="primary-color"
+                    type="color"
+                    value={settings.primaryColor}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, primaryColor: e.target.value }))
+                    }
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                  <Input id="confirm-password" type="password" />
-                </div>
-                <Button>Changer le mot de passe</Button>
+                <Button onClick={handleSave}>Sauvegarder l'apparence</Button>
               </CardContent>
             </Card>
           </TabsContent>
