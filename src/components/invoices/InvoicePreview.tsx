@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail, Download, WhatsApp } from "lucide-react";
+import { Mail, Download } from "lucide-react";
 import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
 import type { Invoice } from "@/types/invoice";
 import { format } from "date-fns";
@@ -18,11 +18,6 @@ export const InvoicePreview = ({ invoice, open, onOpenChange }: InvoicePreviewPr
   const handleSendEmail = () => {
     // Implémenter l'envoi par email
     console.log("Envoi par email");
-  };
-
-  const handleSendWhatsApp = () => {
-    // Implémenter l'envoi par WhatsApp
-    console.log("Envoi par WhatsApp");
   };
 
   const handleDownload = () => {
@@ -99,10 +94,6 @@ export const InvoicePreview = ({ invoice, open, onOpenChange }: InvoicePreviewPr
             <Button onClick={handleSendEmail} variant="outline">
               <Mail className="w-4 h-4 mr-2" />
               Email
-            </Button>
-            <Button onClick={handleSendWhatsApp} variant="outline">
-              <WhatsApp className="w-4 h-4 mr-2" />
-              WhatsApp
             </Button>
             <Button onClick={handleDownload}>
               <Download className="w-4 h-4 mr-2" />
