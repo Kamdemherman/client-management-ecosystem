@@ -10,8 +10,6 @@ import { Search, ShoppingCart, Eye, Package, Trash2, Clock } from "lucide-react"
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
-import { InvoiceGenerator } from "@/components/invoices/InvoiceGenerator";
 import type { Order } from "@/types/order";
 
 const ITEMS_PER_PAGE = 10;
@@ -54,7 +52,7 @@ const Orders = () => {
     });
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
+  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
@@ -225,14 +223,22 @@ const Orders = () => {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious 
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(prev => prev - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                     />
                   </PaginationItem>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <PaginationItem key={page}>
                       <PaginationLink
-                        onClick={() => setCurrentPage(page)}
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(page);
+                        }}
                         isActive={currentPage === page}
                       >
                         {page}
@@ -241,8 +247,12 @@ const Orders = () => {
                   ))}
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                     />
                   </PaginationItem>
                 </PaginationContent>
