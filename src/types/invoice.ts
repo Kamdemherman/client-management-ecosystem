@@ -1,16 +1,16 @@
+export type PaymentStatus = "paid" | "pending" | "overdue";
+
 export interface Invoice {
   id: string;
-  number: string;
-  date: Date;
-  clientId: string;
-  clientName: string;
-  items: {
+  invoiceNumber: string;
+  date: string;
+  client: string;
+  amount: string;
+  paymentStatus: PaymentStatus;
+  products: {
     id: string;
     name: string;
     quantity: number;
     price: number;
   }[];
-  total: number;
-  status: "paid" | "pending" | "overdue";
-  paymentDue: Date;
 }
