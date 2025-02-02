@@ -10,7 +10,10 @@ import {
   MessageSquare, 
   LogOut,
   Calendar,
-  Truck
+  Truck,
+  Settings,
+  History,
+  UserCog
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -30,6 +33,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Truck, label: "Livraisons", path: "/deliveries" },
     { icon: FileText, label: "Factures", path: "/invoices" },
     { icon: MessageSquare, label: "Plaintes", path: "/complaints" },
+    { icon: UserCog, label: "Utilisateurs", path: "/users" },
+    { icon: History, label: "Logs", path: "/logs" },
+    { icon: Settings, label: "Paramètres", path: "/settings" },
   ];
 
   return (

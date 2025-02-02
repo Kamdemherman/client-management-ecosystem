@@ -12,6 +12,9 @@ import Invoices from "./pages/Invoices";
 import Complaints from "./pages/Complaints";
 import Reservations from "./pages/Reservations";
 import Deliveries from "./pages/Deliveries";
+import Users from "./pages/Users";
+import Logs from "./pages/Logs";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +41,9 @@ const App = () => (
           <Route path="/deliveries" element={<Deliveries />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/complaints" element={<Complaints />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/logs" element={<Logs />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
