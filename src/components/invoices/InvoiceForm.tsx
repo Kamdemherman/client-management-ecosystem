@@ -3,20 +3,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { PaymentStatus } from "@/types/invoice";
 
 interface Product {
   id: string;
   name: string;
   quantity: number;
   price: number;
-}
-
-interface Invoice {
-  id: string;
-  client: string;
-  date: string;
-  amount: string;
-  products: Product[];
 }
 
 interface InvoiceFormProps {
@@ -40,6 +35,14 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>(
     invoice?.products || []
   );
+
+  const generateInvoiceNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `FAC-${year}${month}-${random}`;
+  };
 
   const handleAddProduct = () => {
     setSelectedProducts([
@@ -85,9 +88,31 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
       const formData = new FormData(e.currentTarget);
       formData.set("products", JSON.stringify(selectedProducts));
       formData.set("amount", calculateTotal().toString());
+      formData.set("date", format(new Date(), "yyyy-MM-dd"));
+      formData.set("invoiceNumber", invoice?.invoiceNumber || generateInvoiceNumber());
+      formData.set("paymentStatus", "pending");
       onSubmit(formData);
     }}>
       <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>N° Facture</Label>
+            <Input 
+              value={invoice?.invoiceNumber || generateInvoiceNumber()} 
+              readOnly 
+              className="bg-gray-100"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Date</Label>
+            <Input 
+              type="date" 
+              name="date"
+              defaultValue={invoice?.date || format(new Date(), "yyyy-MM-dd")}
+            />
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="client">Client</Label>
           <Select name="client" defaultValue={invoice?.client}>

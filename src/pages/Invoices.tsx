@@ -2,41 +2,37 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { InvoiceForm } from "@/components/invoices/InvoiceForm";
+import { InvoicePreview } from "@/components/invoices/InvoicePreview";
 import { useToast } from "@/hooks/use-toast";
+import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-
-interface Invoice {
-  id: string;
-  client: string;
-  date: string;
-  amount: string;
-  products: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-}
+import type { Invoice } from "@/types/invoice";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const mockInvoices: Invoice[] = [
   { 
-    id: "INV001", 
-    client: "Jean Dupont", 
-    date: "2024-02-20", 
-    amount: "1500€",
+    id: "INV001",
+    invoiceNumber: "FAC-2402-001",
+    client: "Jean Dupont",
+    date: "2024-02-20",
+    amount: "1500",
+    paymentStatus: "pending",
     products: [
       { id: "P1", name: "Aliment A", quantity: 2, price: 750 }
     ]
   },
   { 
-    id: "INV002", 
-    client: "Marie Martin", 
-    date: "2024-02-19", 
-    amount: "2300€",
+    id: "INV002",
+    invoiceNumber: "FAC-2402-002",
+    client: "Marie Martin",
+    date: "2024-02-19",
+    amount: "2300",
+    paymentStatus: "paid",
     products: [
       { id: "P2", name: "Aliment B", quantity: 3, price: 766.67 }
     ]
@@ -46,14 +42,17 @@ const mockInvoices: Invoice[] = [
 const Invoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
 
   const handleCreateInvoice = (formData: FormData) => {
     const newInvoice: Invoice = {
       id: `INV${(invoices.length + 1).toString().padStart(3, '0')}`,
+      invoiceNumber: formData.get("invoiceNumber") as string,
       client: formData.get("client") as string,
-      date: new Date().toISOString().split('T')[0],
-      amount: `${formData.get("amount")}€`,
+      date: formData.get("date") as string,
+      amount: formData.get("amount") as string,
+      paymentStatus: "pending",
       products: JSON.parse(formData.get("products") as string)
     };
 
@@ -72,7 +71,8 @@ const Invoices = () => {
         return {
           ...invoice,
           client: formData.get("client") as string,
-          amount: `${formData.get("amount")}€`,
+          date: formData.get("date") as string,
+          amount: formData.get("amount") as string,
           products: JSON.parse(formData.get("products") as string)
         };
       }
@@ -127,22 +127,34 @@ const Invoices = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead>N° Facture</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Montant</TableHead>
+                  <TableHead>Statut</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell>{invoice.id}</TableCell>
+                    <TableCell>{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.client}</TableCell>
-                    <TableCell>{invoice.date}</TableCell>
-                    <TableCell>{invoice.amount}</TableCell>
+                    <TableCell>{format(new Date(invoice.date), "dd/MM/yyyy")}</TableCell>
+                    <TableCell>{invoice.amount}€</TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge status={invoice.paymentStatus} />
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setSelectedInvoice(invoice)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
@@ -197,6 +209,12 @@ const Invoices = () => {
           </CardContent>
         </Card>
       </div>
+
+      <InvoicePreview
+        invoice={selectedInvoice}
+        open={!!selectedInvoice}
+        onOpenChange={(open) => !open && setSelectedInvoice(null)}
+      />
     </DashboardLayout>
   );
 };
