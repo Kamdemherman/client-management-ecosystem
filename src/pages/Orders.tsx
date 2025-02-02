@@ -116,7 +116,6 @@ const Orders = () => {
               <div className="text-2xl font-bold">{orders.length}</div>
             </CardContent>
           </Card>
-          {/* ... Autres statistiques */}
         </div>
 
         <Card>
