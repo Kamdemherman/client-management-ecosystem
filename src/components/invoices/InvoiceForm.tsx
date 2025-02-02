@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { PaymentStatus } from "@/types/invoice";
+import { PaymentStatus, Invoice } from "@/types/invoice";
 
 interface Product {
   id: string;
