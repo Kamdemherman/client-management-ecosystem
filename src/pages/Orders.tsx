@@ -28,7 +28,38 @@ const Orders = () => {
       total: "1500€",
       items: "Engrais Bio (x3), Pesticides Naturels (x2)",
     },
-    // ... keep existing code (other orders data)
+    {
+      id: "ORD002",
+      client: "Marie Curie",
+      date: "2024-01-21",
+      status: "En cours",
+      total: "2000€",
+      items: "Fertilizers (x5), Pesticides (x1)",
+    },
+    {
+      id: "ORD003",
+      client: "Albert Einstein",
+      date: "2024-01-22",
+      status: "Livrée",
+      total: "3000€",
+      items: "Seeds (x10), Tools (x3)",
+    },
+    {
+      id: "ORD004",
+      client: "Isaac Newton",
+      date: "2024-01-23",
+      status: "En attente",
+      total: "1200€",
+      items: "Soil (x2), Fertilizers (x4)",
+    },
+    {
+      id: "ORD005",
+      client: "Galileo Galilei",
+      date: "2024-01-24",
+      status: "Livrée",
+      total: "2500€",
+      items: "Pesticides (x2), Tools (x5)",
+    },
   ]);
 
   const filteredOrders = orders.filter(order => {
@@ -61,8 +92,6 @@ const Orders = () => {
       description: `Le statut de la commande ${orderId} a été mis à jour à "${newStatus}".`,
     });
   };
-
-  // ... keep existing code (JSX and UI components)
 
   return (
     <DashboardLayout>
@@ -180,7 +209,7 @@ const Orders = () => {
 
                         <Select
                           defaultValue={order.status}
-                          onValueChange={(value) => handleUpdateStatus(order.id, value)}
+                          onValueChange={(value: Order["status"]) => handleUpdateStatus(order.id, value)}
                         >
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
