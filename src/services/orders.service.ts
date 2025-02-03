@@ -1,48 +1,48 @@
-import { API_BASE_URL, getAuthHeaders } from './api-config';
-import { Order } from '@/types/order';
+import { Order } from "@/types/order";
+import { api } from "./api-config";
 
 export const ordersService = {
   getAll: async (): Promise<Order[]> => {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch orders');
-    return response.json();
+    const response = await api.get("/orders");
+    return response.data;
   },
 
   getById: async (id: string): Promise<Order> => {
-    const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch order');
-    return response.json();
+    const response = await api.get(`/orders/${id}`);
+    return response.data;
   },
 
-  create: async (formData: FormData): Promise<Order> => {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to create order');
-    return response.json();
+  create: async (order: Omit<Order, "id" | "date">): Promise<Order> => {
+    const response = await api.post("/orders", order);
+    return response.data;
   },
 
-  update: async (id: string, formData: FormData): Promise<Order> => {
-    const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to update order');
-    return response.json();
+  update: async (id: string, order: Partial<Order>): Promise<Order> => {
+    const response = await api.put(`/orders/${id}`, order);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to delete order');
+    await api.delete(`/orders/${id}`);
   },
+
+  updateStatus: async (id: string, status: Order["status"]): Promise<Order> => {
+    const response = await api.patch(`/orders/${id}/status`, { status });
+    return response.data;
+  },
+
+  getByClient: async (clientId: string): Promise<Order[]> => {
+    const response = await api.get(`/clients/${clientId}/orders`);
+    return response.data;
+  },
+
+  getByAgency: async (agencyId: string): Promise<Order[]> => {
+    const response = await api.get(`/agencies/${agencyId}/orders`);
+    return response.data;
+  },
+
+  getByStatus: async (status: Order["status"]): Promise<Order[]> => {
+    const response = await api.get(`/orders/status/${status}`);
+    return response.data;
+  }
 };

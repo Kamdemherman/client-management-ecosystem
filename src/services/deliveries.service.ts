@@ -1,57 +1,43 @@
-import { API_BASE_URL, getAuthHeaders } from './api-config';
-
-export interface Delivery {
-  id: string;
-  orderId: string;
-  date: string;
-  status: "pending" | "in_transit" | "delivered";
-  address: string;
-  client: string;
-  items: string;
-}
+import { Delivery } from "@/types/delivery";
+import { api } from "./api-config";
 
 export const deliveriesService = {
   getAll: async (): Promise<Delivery[]> => {
-    const response = await fetch(`${API_BASE_URL}/deliveries`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch deliveries');
-    return response.json();
+    const response = await api.get("/deliveries");
+    return response.data;
   },
 
   getById: async (id: string): Promise<Delivery> => {
-    const response = await fetch(`${API_BASE_URL}/deliveries/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch delivery');
-    return response.json();
+    const response = await api.get(`/deliveries/${id}`);
+    return response.data;
   },
 
-  create: async (formData: FormData): Promise<Delivery> => {
-    const response = await fetch(`${API_BASE_URL}/deliveries`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to create delivery');
-    return response.json();
+  create: async (delivery: Omit<Delivery, "id" | "createdAt" | "updatedAt">): Promise<Delivery> => {
+    const response = await api.post("/deliveries", delivery);
+    return response.data;
   },
 
-  update: async (id: string, formData: FormData): Promise<Delivery> => {
-    const response = await fetch(`${API_BASE_URL}/deliveries/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to update delivery');
-    return response.json();
+  update: async (id: string, delivery: Partial<Delivery>): Promise<Delivery> => {
+    const response = await api.put(`/deliveries/${id}`, delivery);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/deliveries/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to delete delivery');
+    await api.delete(`/deliveries/${id}`);
   },
+
+  updateStatus: async (id: string, status: Delivery["status"]): Promise<Delivery> => {
+    const response = await api.patch(`/deliveries/${id}/status`, { status });
+    return response.data;
+  },
+
+  getByAgency: async (agencyId: string): Promise<Delivery[]> => {
+    const response = await api.get(`/agencies/${agencyId}/deliveries`);
+    return response.data;
+  },
+
+  getByClient: async (clientId: string): Promise<Delivery[]> => {
+    const response = await api.get(`/clients/${clientId}/deliveries`);
+    return response.data;
+  }
 };

@@ -1,48 +1,48 @@
-import { API_BASE_URL, getAuthHeaders } from './api-config';
-
-export interface Reservation {
-  id: string;
-  date: Date;
-  clientName: string;
-  productName: string;
-  quantity: number;
-  status: "pending" | "confirmed" | "completed";
-}
+import { Reservation } from "@/types/reservation";
+import { api } from "./api-config";
 
 export const reservationsService = {
   getAll: async (): Promise<Reservation[]> => {
-    const response = await fetch(`${API_BASE_URL}/reservations`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch reservations');
-    return response.json();
+    const response = await api.get("/reservations");
+    return response.data;
   },
 
-  create: async (formData: FormData): Promise<Reservation> => {
-    const response = await fetch(`${API_BASE_URL}/reservations`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to create reservation');
-    return response.json();
+  getById: async (id: string): Promise<Reservation> => {
+    const response = await api.get(`/reservations/${id}`);
+    return response.data;
   },
 
-  update: async (id: string, formData: FormData): Promise<Reservation> => {
-    const response = await fetch(`${API_BASE_URL}/reservations/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to update reservation');
-    return response.json();
+  create: async (reservation: Omit<Reservation, "id" | "createdAt" | "updatedAt">): Promise<Reservation> => {
+    const response = await api.post("/reservations", reservation);
+    return response.data;
+  },
+
+  update: async (id: string, reservation: Partial<Reservation>): Promise<Reservation> => {
+    const response = await api.put(`/reservations/${id}`, reservation);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/reservations/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to delete reservation');
+    await api.delete(`/reservations/${id}`);
   },
+
+  updateStatus: async (id: string, status: Reservation["status"]): Promise<Reservation> => {
+    const response = await api.patch(`/reservations/${id}/status`, { status });
+    return response.data;
+  },
+
+  getByAgency: async (agencyId: string): Promise<Reservation[]> => {
+    const response = await api.get(`/agencies/${agencyId}/reservations`);
+    return response.data;
+  },
+
+  getByClient: async (clientId: string): Promise<Reservation[]> => {
+    const response = await api.get(`/clients/${clientId}/reservations`);
+    return response.data;
+  },
+
+  getByProduct: async (productId: string): Promise<Reservation[]> => {
+    const response = await api.get(`/products/${productId}/reservations`);
+    return response.data;
+  }
 };
