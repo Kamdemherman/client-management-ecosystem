@@ -144,7 +144,7 @@ const Clients = () => {
           </Dialog>
         </div>
 
-        <ClientStats clients={mockClients} />
+        <ClientStats clients={clients} />
 
         <Card>
           <CardHeader>
