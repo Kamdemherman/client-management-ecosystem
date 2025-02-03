@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Search, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,60 +13,8 @@ import { ClientStats } from "@/components/clients/ClientStats";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { ClientList } from "@/components/clients/ClientList";
 import { ClientDetailsDialog } from "@/components/clients/ClientDetailsDialog";
-
-const mockClients: Client[] = [
-  { 
-    id: 1, 
-    name: "Jean Dupont", 
-    email: "jean@example.com",
-    phone: "+1234567890",
-    address: "123 Rue de Paris",
-    farmInfo: "Élevage de volailles, 100 poules",
-    clientId: "CLI001",
-    status: "Actif",
-    orders: 12, 
-    volume: "150000",
-    pendingOrders: 2,
-    mostOrdered: "Aliments volaille",
-    orderFrequency: "Hebdomadaire",
-    agency: "Agence Nord",
-    region: "Nord"
-  },
-  { 
-    id: 2, 
-    name: "Marie Martin", 
-    email: "marie@example.com",
-    phone: "+1234567891",
-    address: "456 Avenue de Lyon",
-    farmInfo: "Élevage de bétail, 50 vaches",
-    clientId: "CLI002",
-    status: "Actif",
-    orders: 8, 
-    volume: "80000",
-    pendingOrders: 1,
-    mostOrdered: "Aliments bétail",
-    orderFrequency: "Mensuel",
-    agency: "Agence Sud",
-    region: "Sud"
-  },
-  { 
-    id: 3, 
-    name: "Pierre Durant", 
-    email: "pierre@example.com",
-    phone: "+1234567892",
-    address: "789 Boulevard de Marseille",
-    farmInfo: "Élevage de volailles, 200 poules",
-    clientId: "CLI003",
-    status: "Inactif",
-    orders: 15, 
-    volume: "200000",
-    pendingOrders: 0,
-    mostOrdered: "Aliments volaille",
-    orderFrequency: "Hebdomadaire",
-    agency: "Agence Est",
-    region: "Est"
-  },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { clientsService } from "@/services/clients.service";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -77,43 +25,86 @@ const Clients = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleDeleteClient = (client: Client) => {
-    toast({
-      title: "Client supprimé",
-      description: "Le client a été supprimé avec succès.",
-    });
-  };
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ['clients'],
+    queryFn: clientsService.getAll
+  });
 
-  const handleUpdateClient = (formData: FormData) => {
-    if (editingClient) {
-      const updatedClient = {
-        ...editingClient,
-        name: formData.get('name') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
-        address: formData.get('address') as string,
-        farmInfo: formData.get('farmInfo') as string,
-        status: formData.get('status') as "Actif" | "Inactif",
-      };
+  const createMutation = useMutation({
+    mutationFn: clientsService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({
+        title: "Client créé",
+        description: "Le nouveau client a été créé avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création du client.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, formData }: { id: number; formData: FormData }) => 
+      clientsService.update(id, formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      setEditingClient(null);
       toast({
         title: "Client mis à jour",
         description: "Les informations du client ont été mises à jour avec succès.",
       });
-      setEditingClient(null);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour du client.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: clientsService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({
+        title: "Client supprimé",
+        description: "Le client a été supprimé avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression du client.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateClient = (formData: FormData) => {
+    createMutation.mutate(formData);
+  };
+
+  const handleUpdateClient = (formData: FormData) => {
+    if (editingClient) {
+      updateMutation.mutate({ id: editingClient.id, formData });
     }
   };
 
-  const handleCreateClient = (formData: FormData) => {
-    toast({
-      title: "Client créé",
-      description: "Le nouveau client a été créé avec succès.",
-    });
+  const handleDeleteClient = (client: Client) => {
+    deleteMutation.mutate(client.id);
   };
 
-  const filteredClients = mockClients.filter(client => 
+  const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filterRegion === "all" || !filterRegion ? true : client.region === filterRegion)
+    (filterRegion === "" || client.region === filterRegion)
   );
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
@@ -121,6 +112,10 @@ const Clients = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <DashboardLayout>

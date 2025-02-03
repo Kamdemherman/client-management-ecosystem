@@ -3,99 +3,103 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Building2, Eye, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Search, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Agency } from "@/types/agency";
 import { AgencyStats } from "@/components/agencies/AgencyStats";
 import { AgencyForm } from "@/components/agencies/AgencyForm";
 import { AgencyDetailsDialog } from "@/components/agencies/AgencyDetailsDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-const mockAgencies: Agency[] = [
-  {
-    id: 1,
-    name: "Agence Paris",
-    location: "Paris",
-    manager: "Jean Martin",
-    managerEmail: "jean.martin@example.com",
-    phone: "+33123456789",
-    address: "123 Rue de Paris, 75001 Paris",
-    status: "Actif",
-    revenue: {
-      weekly: 15000,
-      monthly: 60000,
-      quarterly: 180000,
-      yearly: 720000
-    },
-    complaints: {
-      total: 25,
-      resolved: 20,
-      pending: 5
-    },
-    employeeCount: 15,
-    createdAt: "2024-01-01"
-  },
-  {
-    id: 2,
-    name: "Agence Lyon",
-    location: "Lyon",
-    manager: "Marie Dubois",
-    managerEmail: "marie.dubois@example.com",
-    phone: "+33123456790",
-    address: "456 Rue de Lyon, 69001 Lyon",
-    status: "Actif",
-    revenue: {
-      weekly: 12000,
-      monthly: 48000,
-      quarterly: 144000,
-      yearly: 576000
-    },
-    complaints: {
-      total: 18,
-      resolved: 15,
-      pending: 3
-    },
-    employeeCount: 12,
-    createdAt: "2024-01-15"
-  }
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { agenciesService } from "@/services/agencies.service";
 
 const ITEMS_PER_PAGE = 5;
 
-export default function Agencies() {
+const Agencies = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleCreateAgency = (formData: FormData) => {
-    toast({
-      title: "Agence créée",
-      description: "La nouvelle agence a été créée avec succès.",
-    });
-  };
+  const { data: agencies = [], isLoading } = useQuery({
+    queryKey: ['agencies'],
+    queryFn: agenciesService.getAll
+  });
 
-  const handleUpdateAgency = (formData: FormData) => {
-    if (editingAgency) {
+  const createMutation = useMutation({
+    mutationFn: agenciesService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencies'] });
+      toast({
+        title: "Agence créée",
+        description: "La nouvelle agence a été créée avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de l'agence.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, formData }: { id: number; formData: FormData }) => 
+      agenciesService.update(id, formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencies'] });
+      setEditingAgency(null);
       toast({
         title: "Agence mise à jour",
         description: "Les informations de l'agence ont été mises à jour avec succès.",
       });
-      setEditingAgency(null);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour de l'agence.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: agenciesService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencies'] });
+      toast({
+        title: "Agence supprimée",
+        description: "L'agence a été supprimée avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression de l'agence.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateAgency = (formData: FormData) => {
+    createMutation.mutate(formData);
+  };
+
+  const handleUpdateAgency = (formData: FormData) => {
+    if (editingAgency) {
+      updateMutation.mutate({ id: editingAgency.id, formData });
     }
   };
 
   const handleDeleteAgency = (agency: Agency) => {
-    toast({
-      title: "Agence supprimée",
-      description: "L'agence a été supprimée avec succès.",
-    });
+    deleteMutation.mutate(agency.id);
   };
 
-  const filteredAgencies = mockAgencies.filter(agency => 
+  const filteredAgencies = agencies.filter(agency => 
     agency.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -104,6 +108,10 @@ export default function Agencies() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <DashboardLayout>
@@ -132,7 +140,7 @@ export default function Agencies() {
           </Dialog>
         </div>
 
-        <AgencyStats agencies={mockAgencies} />
+        <AgencyStats agencies={agencies} />
 
         <Card>
           <CardHeader>
@@ -269,3 +277,5 @@ export default function Agencies() {
     </DashboardLayout>
   );
 }
+
+export default Agencies;

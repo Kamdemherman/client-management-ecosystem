@@ -18,21 +18,21 @@ export const clientsService = {
     return response.json();
   },
 
-  create: async (client: Omit<Client, 'id'>) => {
+  create: async (formData: FormData) => {
     const response = await fetch(`${API_BASE_URL}/clients`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(client),
+      body: JSON.stringify(Object.fromEntries(formData)),
     });
     if (!response.ok) throw new Error('Failed to create client');
     return response.json();
   },
 
-  update: async (id: number, client: Partial<Client>) => {
+  update: async (id: number, formData: FormData) => {
     const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(client),
+      body: JSON.stringify(Object.fromEntries(formData)),
     });
     if (!response.ok) throw new Error('Failed to update client');
     return response.json();
