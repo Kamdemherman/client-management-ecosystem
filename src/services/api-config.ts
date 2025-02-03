@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 
 export const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -18,8 +18,9 @@ export const api = axios.create({
 });
 
 // Add request interceptor to add auth headers
-api.interceptors.request.use((config: AxiosRequestConfig) => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const headers = getAuthHeaders();
-  config.headers = headers;
+  config.headers.set('Content-Type', headers['Content-Type']);
+  config.headers.set('Authorization', headers['Authorization']);
   return config;
 });
