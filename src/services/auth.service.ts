@@ -14,9 +14,9 @@ export const authService = {
 
   logout: async () => {
     try {
-      const response = await api.post('/auth/logout');
+      await api.post('/auth/logout');
       localStorage.removeItem('token');
-      return response.ok;
+      return true;
     } catch (error) {
       console.error('Logout error:', error);
       throw error;

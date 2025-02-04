@@ -1,65 +1,33 @@
-import { API_BASE_URL, getAuthHeaders } from './api-config';
+import { api } from './api-config';
 import { Agency } from '@/types/agency';
 
 export const agenciesService = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/agencies`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch agencies');
-    return response.json();
+  getAll: async (): Promise<Agency[]> => {
+    const response = await api.get('/agencies');
+    return response.data;
   },
 
-  getById: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/agencies/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch agency');
-    return response.json();
+  getById: async (id: string): Promise<Agency> => {
+    const response = await api.get(`/agencies/${id}`);
+    return response.data;
   },
 
-  create: async (formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}/agencies`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(Object.fromEntries(formData)),
-    });
-    if (!response.ok) throw new Error('Failed to create agency');
-    return response.json();
+  create: async (agency: Omit<Agency, "id">): Promise<Agency> => {
+    const response = await api.post('/agencies', agency);
+    return response.data;
   },
 
-  update: async (id: number, formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}/agencies/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(Object.fromEntries(formData)),
-    });
-    if (!response.ok) throw new Error('Failed to update agency');
-    return response.json();
+  update: async (id: string, agency: Partial<Agency>): Promise<Agency> => {
+    const response = await api.put(`/agencies/${id}`, agency);
+    return response.data;
   },
 
-  delete: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/agencies/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to delete agency');
-    return response.json();
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/agencies/${id}`);
   },
 
-  getRevenue: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/agencies/${id}/revenue`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch agency revenue');
-    return response.json();
-  },
-
-  getComplaints: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/agencies/${id}/complaints`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch agency complaints');
-    return response.json();
+  getStats: async () => {
+    const response = await api.get('/agencies/stats');
+    return response.data;
   }
 };

@@ -1,49 +1,33 @@
-import { API_BASE_URL, getAuthHeaders } from './api-config';
+import { api } from './api-config';
 import { Client } from '@/types/client';
 
 export const clientsService = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/clients`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch clients');
-    return response.json();
+  getAll: async (): Promise<Client[]> => {
+    const response = await api.get('/clients');
+    return response.data;
   },
 
-  getById: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch client');
-    return response.json();
+  getById: async (id: string): Promise<Client> => {
+    const response = await api.get(`/clients/${id}`);
+    return response.data;
   },
 
-  create: async (formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}/clients`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(Object.fromEntries(formData)),
-    });
-    if (!response.ok) throw new Error('Failed to create client');
-    return response.json();
+  create: async (client: Omit<Client, "id">): Promise<Client> => {
+    const response = await api.post('/clients', client);
+    return response.data;
   },
 
-  update: async (id: number, formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(Object.fromEntries(formData)),
-    });
-    if (!response.ok) throw new Error('Failed to update client');
-    return response.json();
+  update: async (id: string, client: Partial<Client>): Promise<Client> => {
+    const response = await api.put(`/clients/${id}`, client);
+    return response.data;
   },
 
-  delete: async (id: number) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to delete client');
-    return response.json();
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/clients/${id}`);
+  },
+
+  getStats: async () => {
+    const response = await api.get('/clients/stats');
+    return response.data;
   }
 };
