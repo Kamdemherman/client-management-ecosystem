@@ -24,5 +24,10 @@ export const invoiceService = {
 
   delete: async (id: string) => {
     await api.delete(`/invoices/${id}`);
+  },
+
+  generatePDF: async (id: string) => {
+    const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
+    return response.data;
   }
 };

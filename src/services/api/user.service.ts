@@ -24,5 +24,13 @@ export const userService = {
 
   delete: async (id: string) => {
     await api.delete(`/users/${id}`);
+  },
+
+  updatePassword: async (id: string, currentPassword: string, newPassword: string) => {
+    const response = await api.put(`/users/${id}/password`, {
+      currentPassword,
+      newPassword
+    });
+    return response.data;
   }
 };

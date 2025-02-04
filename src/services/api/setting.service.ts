@@ -13,6 +13,11 @@ export const settingService = {
     return response.data;
   },
 
+  getByGroup: async (group: string) => {
+    const response = await api.get(`/settings/group/${group}`);
+    return response.data;
+  },
+
   update: async (key: string, value: any) => {
     const response = await api.put(`/settings/${key}`, { value });
     return response.data;

@@ -21,8 +21,13 @@ export const complaintService = {
     return response.data;
   },
 
-  update: async (id: number, status: ComplaintStatus) => {
-    const response = await api.patch(`/complaints/${id}`, { status });
+  update: async (id: number, complaint: Partial<Complaint>) => {
+    const response = await api.patch(`/complaints/${id}`, complaint);
+    return response.data;
+  },
+
+  updateStatus: async (id: number, status: ComplaintStatus) => {
+    const response = await api.patch(`/complaints/${id}/status`, { status });
     return response.data;
   },
 

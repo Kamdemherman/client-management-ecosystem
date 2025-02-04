@@ -24,5 +24,10 @@ export const paymentService = {
 
   delete: async (id: string) => {
     await api.delete(`/payments/${id}`);
+  },
+
+  getStats: async () => {
+    const response = await api.get("/payments/stats");
+    return response.data;
   }
 };
