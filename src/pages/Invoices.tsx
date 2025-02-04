@@ -13,87 +13,77 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import type { Invoice } from "@/types/invoice";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-
-const mockInvoices: Invoice[] = [
-  { 
-    id: "INV001",
-    invoiceNumber: "FAC-2402-001",
-    client: "Jean Dupont",
-    date: "2024-02-20",
-    amount: "1500",
-    paymentStatus: "pending",
-    products: [
-      { id: "P1", name: "Aliment A", quantity: 2, price: 750 }
-    ]
-  },
-  { 
-    id: "INV002",
-    invoiceNumber: "FAC-2402-002",
-    client: "Marie Martin",
-    date: "2024-02-19",
-    amount: "2300",
-    paymentStatus: "paid",
-    products: [
-      { id: "P2", name: "Aliment B", quantity: 3, price: 766.67 }
-    ]
-  }
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { invoiceService } from "@/services/api/invoice.service";
 
 const Invoices = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ['invoices'],
+    queryFn: invoiceService.getAll,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: invoiceService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: "Facture créée",
+        description: "La nouvelle facture a été créée avec succès."
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) => 
+      invoiceService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      setEditingInvoice(null);
+      toast({
+        title: "Facture mise à jour",
+        description: "La facture a été mise à jour avec succès."
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: invoiceService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: "Facture supprimée",
+        description: "La facture a été supprimée avec succès."
+      });
+    },
+  });
 
   const handleCreateInvoice = (formData: FormData) => {
-    const newInvoice: Invoice = {
-      id: `INV${(invoices.length + 1).toString().padStart(3, '0')}`,
-      invoiceNumber: formData.get("invoiceNumber") as string,
-      client: formData.get("client") as string,
-      date: formData.get("date") as string,
-      amount: formData.get("amount") as string,
-      paymentStatus: "pending",
-      products: JSON.parse(formData.get("products") as string)
-    };
-
-    setInvoices([...invoices, newInvoice]);
-    toast({
-      title: "Facture créée",
-      description: "La nouvelle facture a été créée avec succès."
-    });
+    createMutation.mutate(formData);
   };
 
   const handleUpdateInvoice = (formData: FormData) => {
     if (!editingInvoice) return;
-
-    const updatedInvoices = invoices.map(invoice => {
-      if (invoice.id === editingInvoice.id) {
-        return {
-          ...invoice,
-          client: formData.get("client") as string,
-          date: formData.get("date") as string,
-          amount: formData.get("amount") as string,
-          products: JSON.parse(formData.get("products") as string)
-        };
-      }
-      return invoice;
-    });
-
-    setInvoices(updatedInvoices);
-    setEditingInvoice(null);
-    toast({
-      title: "Facture mise à jour",
-      description: "La facture a été mise à jour avec succès."
-    });
+    updateMutation.mutate({ id: editingInvoice.id, data: formData });
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
-    setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
-    toast({
-      title: "Facture supprimée",
-      description: "La facture a été supprimée avec succès."
-    });
+    deleteMutation.mutate(invoiceId);
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

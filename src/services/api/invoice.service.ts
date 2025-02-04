@@ -12,13 +12,13 @@ export const invoiceService = {
     return response.data;
   },
 
-  create: async (invoice: Omit<Invoice, "id">) => {
-    const response = await api.post("/invoices", invoice);
+  create: async (data: FormData) => {
+    const response = await api.post("/invoices", Object.fromEntries(data));
     return response.data;
   },
 
-  update: async (id: string, invoice: Partial<Invoice>) => {
-    const response = await api.put(`/invoices/${id}`, invoice);
+  update: async (id: string, data: FormData) => {
+    const response = await api.put(`/invoices/${id}`, Object.fromEntries(data));
     return response.data;
   },
 
