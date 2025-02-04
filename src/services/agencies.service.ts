@@ -7,22 +7,24 @@ export const agenciesService = {
     return response.data;
   },
 
-  getById: async (id: string): Promise<Agency> => {
+  getById: async (id: number): Promise<Agency> => {
     const response = await api.get(`/agencies/${id}`);
     return response.data;
   },
 
-  create: async (agency: Omit<Agency, "id">): Promise<Agency> => {
-    const response = await api.post('/agencies', agency);
+  create: async (formData: FormData): Promise<Agency> => {
+    const data = Object.fromEntries(formData.entries());
+    const response = await api.post('/agencies', data);
     return response.data;
   },
 
-  update: async (id: string, agency: Partial<Agency>): Promise<Agency> => {
-    const response = await api.put(`/agencies/${id}`, agency);
+  update: async (id: number, formData: FormData): Promise<Agency> => {
+    const data = Object.fromEntries(formData.entries());
+    const response = await api.put(`/agencies/${id}`, data);
     return response.data;
   },
 
-  delete: async (id: string): Promise<void> => {
+  delete: async (id: number): Promise<void> => {
     await api.delete(`/agencies/${id}`);
   },
 

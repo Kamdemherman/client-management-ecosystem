@@ -7,22 +7,24 @@ export const clientsService = {
     return response.data;
   },
 
-  getById: async (id: string): Promise<Client> => {
+  getById: async (id: number): Promise<Client> => {
     const response = await api.get(`/clients/${id}`);
     return response.data;
   },
 
-  create: async (client: Omit<Client, "id">): Promise<Client> => {
-    const response = await api.post('/clients', client);
+  create: async (formData: FormData): Promise<Client> => {
+    const data = Object.fromEntries(formData.entries());
+    const response = await api.post('/clients', data);
     return response.data;
   },
 
-  update: async (id: string, client: Partial<Client>): Promise<Client> => {
-    const response = await api.put(`/clients/${id}`, client);
+  update: async (id: number, formData: FormData): Promise<Client> => {
+    const data = Object.fromEntries(formData.entries());
+    const response = await api.put(`/clients/${id}`, data);
     return response.data;
   },
 
-  delete: async (id: string): Promise<void> => {
+  delete: async (id: number): Promise<void> => {
     await api.delete(`/clients/${id}`);
   },
 

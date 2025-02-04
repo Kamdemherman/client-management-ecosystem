@@ -31,7 +31,7 @@ const Agencies = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: agenciesService.create,
+    mutationFn: (formData: FormData) => agenciesService.create(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencies'] });
       toast({
@@ -69,7 +69,7 @@ const Agencies = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: agenciesService.delete,
+    mutationFn: (id: number) => agenciesService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencies'] });
       toast({
