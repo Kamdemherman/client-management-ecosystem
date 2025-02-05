@@ -116,4 +116,27 @@ export const InvoicePreview = ({ invoice, open, onOpenChange }: InvoicePreviewPr
                   <tr key={index} className="border-t">
                     <td className="px-4 py-2">{product.name}</td>
                     <td className="px-4 py-2 text-right">{product.quantity}</td>
-                    <td className="px-4 py-2 text-right">{product.price.toFixed(2)}€</
+                    <td className="px-4 py-2 text-right">{product.price.toFixed(2)}€</td>
+                    <td className="px-4 py-2 text-right">{(product.price * product.quantity).toFixed(2)}€</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleSendEmail}>
+              <Mail className="w-4 h-4 mr-2" />
+              Envoyer par email
+            </Button>
+            <Button variant="outline" onClick={handleDownload}>
+              <Download className="w-4 h-4 mr-2" />
+              Télécharger PDF
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
