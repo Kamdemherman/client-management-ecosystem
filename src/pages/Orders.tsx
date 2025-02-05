@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -10,6 +11,8 @@ import { Search, ShoppingCart, Eye, Package, Trash2, Clock } from "lucide-react"
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ordersService } from "@/services/orders.service";
 import type { Order } from "@/types/order";
 
 const ITEMS_PER_PAGE = 10;
@@ -19,48 +22,35 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "ORD001",
-      client: "Jean Dupont",
-      date: "2024-01-20",
-      status: "En attente",
-      total: "1500€",
-      items: "Engrais Bio (x3), Pesticides Naturels (x2)",
-    },
-    {
-      id: "ORD002",
-      client: "Marie Curie",
-      date: "2024-01-21",
-      status: "En cours",
-      total: "2000€",
-      items: "Fertilizers (x5), Pesticides (x1)",
-    },
-    {
-      id: "ORD003",
-      client: "Albert Einstein",
-      date: "2024-01-22",
-      status: "Livrée",
-      total: "3000€",
-      items: "Seeds (x10), Tools (x3)",
-    },
-    {
-      id: "ORD004",
-      client: "Isaac Newton",
-      date: "2024-01-23",
-      status: "En attente",
-      total: "1200€",
-      items: "Soil (x2), Fertilizers (x4)",
-    },
-    {
-      id: "ORD005",
-      client: "Galileo Galilei",
-      date: "2024-01-24",
-      status: "Livrée",
-      total: "2500€",
-      items: "Pesticides (x2), Tools (x5)",
-    },
-  ]);
+  const queryClient = useQueryClient();
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['orders'],
+    queryFn: ordersService.getAll
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: ordersService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: "Commande supprimée",
+        description: "La commande a été supprimée avec succès.",
+      });
+    }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: Order["status"] }) =>
+      ordersService.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: "Statut mis à jour",
+        description: "Le statut de la commande a été mis à jour avec succès.",
+      });
+    }
+  });
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,23 +65,13 @@ const Orders = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleDeleteOrder = (orderId: string) => {
-    setOrders(orders.filter(order => order.id !== orderId));
-    toast({
-      title: "Commande supprimée",
-      description: `La commande ${orderId} a été supprimée avec succès.`,
-    });
-  };
-
-  const handleUpdateStatus = (orderId: string, newStatus: Order["status"]) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-    toast({
-      title: "Statut mis à jour",
-      description: `Le statut de la commande ${orderId} a été mis à jour à "${newStatus}".`,
-    });
-  };
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div>Chargement...</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -208,7 +188,8 @@ const Orders = () => {
 
                         <Select
                           defaultValue={order.status}
-                          onValueChange={(value: Order["status"]) => handleUpdateStatus(order.id, value)}
+                          onValueChange={(value: Order["status"]) => 
+                            updateStatusMutation.mutate({ id: order.id, status: value })}
                         >
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
@@ -235,7 +216,7 @@ const Orders = () => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteOrder(order.id)}>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(order.id)}>
                                 Supprimer
                               </AlertDialogAction>
                             </AlertDialogFooter>
