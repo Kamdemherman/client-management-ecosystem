@@ -1,3 +1,4 @@
+
 import { api } from "../api-config";
 
 interface Setting {
@@ -9,22 +10,22 @@ interface Setting {
 
 export const settingService = {
   getAll: async () => {
-    const response = await api.get("/settings");
+    const response = await api.get<Setting[]>("/settings");
     return response.data;
   },
 
   getByGroup: async (group: string) => {
-    const response = await api.get(`/settings/group/${group}`);
+    const response = await api.get<Setting[]>(`/settings/group/${group}`);
     return response.data;
   },
 
   update: async (key: string, value: any) => {
-    const response = await api.put(`/settings/${key}`, { value });
+    const response = await api.put<Setting>(`/settings/${key}`, { value });
     return response.data;
   },
 
   updateBulk: async (settings: Partial<Setting>[]) => {
-    const response = await api.put("/settings", { settings });
+    const response = await api.put<Setting[]>("/settings", { settings });
     return response.data;
   }
 };

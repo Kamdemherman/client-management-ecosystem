@@ -1,3 +1,4 @@
+
 import { api } from "../api-config";
 import type { Log } from "@/types/log";
 
@@ -10,12 +11,12 @@ export const logService = {
     startDate?: string;
     endDate?: string;
   }) => {
-    const response = await api.get("/logs", { params: filters });
+    const response = await api.get<Log[]>("/logs", { params: filters });
     return response.data;
   },
 
   create: async (log: Omit<Log, "id" | "createdAt">) => {
-    const response = await api.post("/logs", log);
+    const response = await api.post<Log>("/logs", log);
     return response.data;
   },
 

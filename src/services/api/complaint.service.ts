@@ -1,3 +1,4 @@
+
 import { api } from "../api-config";
 import type { ComplaintStatus } from "@/types/complaint";
 
@@ -12,22 +13,22 @@ interface Complaint {
 
 export const complaintService = {
   getAll: async () => {
-    const response = await api.get("/complaints");
+    const response = await api.get<Complaint[]>("/complaints");
     return response.data;
   },
 
   create: async (complaint: Omit<Complaint, "id" | "date">) => {
-    const response = await api.post("/complaints", complaint);
+    const response = await api.post<Complaint>("/complaints", complaint);
     return response.data;
   },
 
   update: async (id: number, complaint: Partial<Complaint>) => {
-    const response = await api.patch(`/complaints/${id}`, complaint);
+    const response = await api.patch<Complaint>(`/complaints/${id}`, complaint);
     return response.data;
   },
 
   updateStatus: async (id: number, status: ComplaintStatus) => {
-    const response = await api.patch(`/complaints/${id}/status`, { status });
+    const response = await api.patch<Complaint>(`/complaints/${id}/status`, { status });
     return response.data;
   },
 
