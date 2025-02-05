@@ -1,24 +1,25 @@
+
 import { api } from "../api-config";
 import type { Invoice } from "@/types/invoice";
 
 export const invoiceService = {
   getAll: async () => {
-    const response = await api.get("/invoices");
+    const response = await api.get<Invoice[]>("/invoices");
     return response.data;
   },
 
   getById: async (id: string) => {
-    const response = await api.get(`/invoices/${id}`);
+    const response = await api.get<Invoice>(`/invoices/${id}`);
     return response.data;
   },
 
   create: async (data: FormData) => {
-    const response = await api.post("/invoices", Object.fromEntries(data));
+    const response = await api.post<Invoice>("/invoices", Object.fromEntries(data));
     return response.data;
   },
 
   update: async (id: string, data: FormData) => {
-    const response = await api.put(`/invoices/${id}`, Object.fromEntries(data));
+    const response = await api.put<Invoice>(`/invoices/${id}`, Object.fromEntries(data));
     return response.data;
   },
 
@@ -27,7 +28,12 @@ export const invoiceService = {
   },
 
   generatePDF: async (id: string) => {
-    const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
+    const response = await api.get(`/invoices/${id}/pdf`, { 
+      responseType: 'blob',
+      headers: {
+        'Accept': 'application/pdf'
+      }
+    });
     return response.data;
   }
 };
