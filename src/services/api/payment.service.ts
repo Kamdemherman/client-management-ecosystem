@@ -13,6 +13,11 @@ export const paymentService = {
     return response.data;
   },
 
+  getByClient: async (clientId: string) => {
+    const response = await api.get<Payment[]>(`/clients/${clientId}/payments`);
+    return response.data;
+  },
+
   create: async (payment: Omit<Payment, "id">) => {
     const response = await api.post<Payment>("/payments", payment);
     return response.data;

@@ -35,5 +35,10 @@ export const invoiceService = {
       }
     });
     return response.data;
+  },
+
+  sendEmail: async (id: string) => {
+    const response = await api.post(`/invoices/${id}/send-email`);
+    return response.data;
   }
 };

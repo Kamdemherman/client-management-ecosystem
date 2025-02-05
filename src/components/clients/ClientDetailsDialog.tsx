@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { ordersService } from "@/services/orders.service";
-import { paymentsService } from "@/services/api/payment.service";
+import { paymentService } from "@/services/api/payment.service";
 import { complaintService } from "@/services/api/complaint.service";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -23,20 +23,20 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
   if (!client) return null;
 
   const { data: orders = [] } = useQuery({
-    queryKey: ['orders', client.id],
-    queryFn: () => ordersService.getByClient(client.id),
+    queryKey: ['orders', client.id.toString()],
+    queryFn: () => ordersService.getByClient(client.id.toString()),
     enabled: open
   });
 
   const { data: payments = [] } = useQuery({
-    queryKey: ['payments', client.id],
-    queryFn: () => paymentsService.getByClient(client.id),
+    queryKey: ['payments', client.id.toString()],
+    queryFn: () => paymentService.getByClient(client.id.toString()),
     enabled: open
   });
 
   const { data: complaints = [] } = useQuery({
-    queryKey: ['complaints', client.id],
-    queryFn: () => complaintService.getByClient(client.id),
+    queryKey: ['complaints', client.id.toString()],
+    queryFn: () => complaintService.getByClient(client.id.toString()),
     enabled: open
   });
 
@@ -108,7 +108,7 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                         {orders.map((order) => (
                           <TableRow key={order.id}>
                             <TableCell>{order.id}</TableCell>
-                            <TableCell>{format(new Date(order.createdAt), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{format(new Date(order.date), "dd/MM/yyyy")}</TableCell>
                             <TableCell>{order.total}€</TableCell>
                             <TableCell>{order.status}</TableCell>
                           </TableRow>
@@ -168,7 +168,7 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                         {complaints.map((complaint) => (
                           <TableRow key={complaint.id}>
                             <TableCell>{complaint.id}</TableCell>
-                            <TableCell>{format(new Date(complaint.createdAt), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{format(new Date(complaint.date), "dd/MM/yyyy")}</TableCell>
                             <TableCell>{complaint.subject}</TableCell>
                             <TableCell>{complaint.status}</TableCell>
                           </TableRow>

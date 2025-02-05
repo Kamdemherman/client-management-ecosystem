@@ -17,6 +17,11 @@ export const complaintService = {
     return response.data;
   },
 
+  getByClient: async (clientId: string) => {
+    const response = await api.get<Complaint[]>(`/clients/${clientId}/complaints`);
+    return response.data;
+  },
+
   create: async (complaint: Omit<Complaint, "id" | "date">) => {
     const response = await api.post<Complaint>("/complaints", complaint);
     return response.data;
