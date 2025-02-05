@@ -10,18 +10,60 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingService } from "@/services/api/setting.service";
 import { useToast } from "@/hooks/use-toast";
 
+interface GeneralSettings {
+  companyName: string;
+  email: string;
+  currency: string;
+  vatRate: string;
+  deliveryDelay: string;
+  primaryColor: string;
+}
+
+interface NotificationSettings {
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+}
+
+const defaultGeneralSettings: GeneralSettings = {
+  companyName: "",
+  email: "",
+  currency: "",
+  vatRate: "",
+  deliveryDelay: "",
+  primaryColor: "#000000"
+};
+
+const defaultNotificationSettings: NotificationSettings = {
+  emailNotifications: false,
+  smsNotifications: false
+};
+
 const Settings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: generalSettings = {} } = useQuery({
+  const { data: generalSettings = defaultGeneralSettings } = useQuery({
     queryKey: ['settings', 'general'],
-    queryFn: () => settingService.getByGroup('general')
+    queryFn: () => settingService.getByGroup('general'),
+    select: (data) => {
+      const settings: Partial<GeneralSettings> = {};
+      data.forEach(setting => {
+        settings[setting.key as keyof GeneralSettings] = setting.value;
+      });
+      return { ...defaultGeneralSettings, ...settings } as GeneralSettings;
+    }
   });
 
-  const { data: notificationSettings = {} } = useQuery({
+  const { data: notificationSettings = defaultNotificationSettings } = useQuery({
     queryKey: ['settings', 'notifications'],
-    queryFn: () => settingService.getByGroup('notifications')
+    queryFn: () => settingService.getByGroup('notifications'),
+    select: (data) => {
+      const settings: Partial<NotificationSettings> = {};
+      data.forEach(setting => {
+        settings[setting.key as keyof NotificationSettings] = setting.value;
+      });
+      return { ...defaultNotificationSettings, ...settings } as NotificationSettings;
+    }
   });
 
   const updateMutation = useMutation({
@@ -62,7 +104,7 @@ const Settings = () => {
                   <Label htmlFor="company-name">Nom de l'entreprise</Label>
                   <Input
                     id="company-name"
-                    value={generalSettings.companyName || ""}
+                    value={generalSettings.companyName}
                     onChange={(e) => handleSave("companyName", e.target.value)}
                   />
                 </div>
@@ -71,7 +113,7 @@ const Settings = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={generalSettings.email || ""}
+                    value={generalSettings.email}
                     onChange={(e) => handleSave("email", e.target.value)}
                   />
                 </div>
@@ -79,7 +121,7 @@ const Settings = () => {
                   <Label htmlFor="currency">Devise</Label>
                   <Input
                     id="currency"
-                    value={generalSettings.currency || ""}
+                    value={generalSettings.currency}
                     onChange={(e) => handleSave("currency", e.target.value)}
                   />
                 </div>
@@ -88,7 +130,7 @@ const Settings = () => {
                   <Input
                     id="vat"
                     type="number"
-                    value={generalSettings.vatRate || ""}
+                    value={generalSettings.vatRate}
                     onChange={(e) => handleSave("vatRate", e.target.value)}
                   />
                 </div>
@@ -97,7 +139,7 @@ const Settings = () => {
                   <Input
                     id="delivery"
                     type="number"
-                    value={generalSettings.deliveryDelay || ""}
+                    value={generalSettings.deliveryDelay}
                     onChange={(e) => handleSave("deliveryDelay", e.target.value)}
                   />
                 </div>
@@ -115,7 +157,7 @@ const Settings = () => {
                   <Label htmlFor="email-notifications">Notifications par email</Label>
                   <Switch
                     id="email-notifications"
-                    checked={notificationSettings.emailNotifications || false}
+                    checked={notificationSettings.emailNotifications}
                     onCheckedChange={(checked) => handleSave("emailNotifications", checked)}
                   />
                 </div>
@@ -123,7 +165,7 @@ const Settings = () => {
                   <Label htmlFor="sms-notifications">Notifications par SMS</Label>
                   <Switch
                     id="sms-notifications"
-                    checked={notificationSettings.smsNotifications || false}
+                    checked={notificationSettings.smsNotifications}
                     onCheckedChange={(checked) => handleSave("smsNotifications", checked)}
                   />
                 </div>
@@ -160,7 +202,7 @@ const Settings = () => {
                   <Input
                     id="primary-color"
                     type="color"
-                    value={generalSettings.primaryColor || "#000000"}
+                    value={generalSettings.primaryColor}
                     onChange={(e) => handleSave("primaryColor", e.target.value)}
                   />
                 </div>
