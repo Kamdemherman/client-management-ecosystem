@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +7,9 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PaymentStatus, Invoice } from "@/types/invoice";
+import { useQuery } from "@tanstack/react-query";
+import { clientsService } from "@/services/clients.service";
+import { inventoryService } from "@/services/inventory.service";
 
 interface Product {
   id: string;
@@ -19,22 +23,20 @@ interface InvoiceFormProps {
   onSubmit: (formData: FormData) => void;
 }
 
-const mockClients = [
-  "Jean Dupont",
-  "Marie Martin",
-  "Pierre Durant"
-];
-
-const mockProducts = [
-  { id: "P1", name: "Aliment A", price: 750 },
-  { id: "P2", name: "Aliment B", price: 766.67 },
-  { id: "P3", name: "Aliment C", price: 500 }
-];
-
 export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>(
     invoice?.products || []
   );
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: clientsService.getAll
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: inventoryService.getAll
+  });
 
   const generateInvoiceNumber = () => {
     const date = new Date();
@@ -58,11 +60,11 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   const handleProductChange = (index: number, field: keyof Product, value: string | number) => {
     const updatedProducts = [...selectedProducts];
     if (field === "id") {
-      const product = mockProducts.find(p => p.id === value);
+      const product = products.find(p => p.id.toString() === value);
       if (product) {
         updatedProducts[index] = {
           ...updatedProducts[index],
-          id: product.id,
+          id: product.id.toString(),
           name: product.name,
           price: product.price
         };
@@ -120,9 +122,9 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
             <SelectContent>
-              {mockClients.map(client => (
-                <SelectItem key={client} value={client}>
-                  {client}
+              {clients.map(client => (
+                <SelectItem key={client.id} value={client.id.toString()}>
+                  {client.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -150,8 +152,8 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
                       <SelectValue placeholder="Sélectionner un produit" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockProducts.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
+                      {products.map(p => (
+                        <SelectItem key={p.id} value={p.id.toString()}>
                           {p.name} - {p.price}€
                         </SelectItem>
                       ))}

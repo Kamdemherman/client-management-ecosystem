@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Mail, Download } from "lucide-react";
@@ -5,6 +6,8 @@ import { PaymentStatusBadge } from "@/components/payments/PaymentStatus";
 import type { Invoice } from "@/types/invoice";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { invoiceService } from "@/services/api/invoice.service";
 
 interface InvoicePreviewProps {
   invoice: Invoice | null;
@@ -13,16 +16,54 @@ interface InvoicePreviewProps {
 }
 
 export const InvoicePreview = ({ invoice, open, onOpenChange }: InvoicePreviewProps) => {
+  const { toast } = useToast();
+  
   if (!invoice) return null;
 
-  const handleSendEmail = () => {
-    // Implémenter l'envoi par email
-    console.log("Envoi par email");
+  const handleSendEmail = async () => {
+    try {
+      // Appel API pour envoyer l'email
+      await invoiceService.sendEmail(invoice.id);
+      toast({
+        title: "Email envoyé",
+        description: "La facture a été envoyée par email avec succès."
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi de l'email.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDownload = () => {
-    // Implémenter le téléchargement PDF
-    console.log("Téléchargement PDF");
+  const handleDownload = async () => {
+    try {
+      const blob = await invoiceService.generatePDF(invoice.id);
+      // Créer un URL pour le blob
+      const url = window.URL.createObjectURL(blob);
+      // Créer un lien temporaire
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `facture-${invoice.invoiceNumber}.pdf`);
+      // Simuler un clic
+      document.body.appendChild(link);
+      link.click();
+      // Nettoyer
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF généré",
+        description: "La facture a été téléchargée avec succès."
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la génération du PDF.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -75,33 +116,4 @@ export const InvoicePreview = ({ invoice, open, onOpenChange }: InvoicePreviewPr
                   <tr key={index} className="border-t">
                     <td className="px-4 py-2">{product.name}</td>
                     <td className="px-4 py-2 text-right">{product.quantity}</td>
-                    <td className="px-4 py-2 text-right">{product.price.toFixed(2)}€</td>
-                    <td className="px-4 py-2 text-right">{(product.quantity * product.price).toFixed(2)}€</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50">
-                <tr className="border-t font-semibold">
-                  <td colSpan={3} className="px-4 py-2 text-right">Total</td>
-                  <td className="px-4 py-2 text-right">{invoice.amount}€</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-2">
-            <Button onClick={handleSendEmail} variant="outline">
-              <Mail className="w-4 h-4 mr-2" />
-              Email
-            </Button>
-            <Button onClick={handleDownload}>
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger PDF
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+                    <td className="px-4 py-2 text-right">{product.price.toFixed(2)}€</

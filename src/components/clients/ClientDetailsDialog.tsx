@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -5,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Client } from "@/types/client";
+import { useQuery } from "@tanstack/react-query";
+import { ordersService } from "@/services/orders.service";
+import { paymentsService } from "@/services/api/payment.service";
+import { complaintService } from "@/services/api/complaint.service";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface ClientDetailsDialogProps {
   client: Client | null;
@@ -15,20 +22,23 @@ interface ClientDetailsDialogProps {
 export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetailsDialogProps) => {
   if (!client) return null;
 
-  const mockOrders = [
-    { id: 1, date: "2024-02-20", total: "1500€", status: "Livré" },
-    { id: 2, date: "2024-02-15", total: "2300€", status: "En cours" },
-  ];
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders', client.id],
+    queryFn: () => ordersService.getByClient(client.id),
+    enabled: open
+  });
 
-  const mockComplaints = [
-    { id: 1, date: "2024-02-10", subject: "Retard de livraison", status: "Résolu" },
-    { id: 2, date: "2024-02-05", subject: "Produit endommagé", status: "En cours" },
-  ];
+  const { data: payments = [] } = useQuery({
+    queryKey: ['payments', client.id],
+    queryFn: () => paymentsService.getByClient(client.id),
+    enabled: open
+  });
 
-  const mockPayments = [
-    { id: 1, date: "2024-02-20", amount: "1500€", status: "Payé" },
-    { id: 2, date: "2024-02-15", amount: "2300€", status: "En attente" },
-  ];
+  const { data: complaints = [] } = useQuery({
+    queryKey: ['complaints', client.id],
+    queryFn: () => complaintService.getByClient(client.id),
+    enabled: open
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,11 +105,11 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockOrders.map((order) => (
+                        {orders.map((order) => (
                           <TableRow key={order.id}>
                             <TableCell>{order.id}</TableCell>
-                            <TableCell>{order.date}</TableCell>
-                            <TableCell>{order.total}</TableCell>
+                            <TableCell>{format(new Date(order.createdAt), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{order.total}€</TableCell>
                             <TableCell>{order.status}</TableCell>
                           </TableRow>
                         ))}
@@ -125,11 +135,11 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockPayments.map((payment) => (
+                        {payments.map((payment) => (
                           <TableRow key={payment.id}>
                             <TableCell>{payment.id}</TableCell>
-                            <TableCell>{payment.date}</TableCell>
-                            <TableCell>{payment.amount}</TableCell>
+                            <TableCell>{format(new Date(payment.date), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{payment.amount}€</TableCell>
                             <TableCell>{payment.status}</TableCell>
                           </TableRow>
                         ))}
@@ -155,10 +165,10 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mockComplaints.map((complaint) => (
+                        {complaints.map((complaint) => (
                           <TableRow key={complaint.id}>
                             <TableCell>{complaint.id}</TableCell>
-                            <TableCell>{complaint.date}</TableCell>
+                            <TableCell>{format(new Date(complaint.createdAt), "dd/MM/yyyy")}</TableCell>
                             <TableCell>{complaint.subject}</TableCell>
                             <TableCell>{complaint.status}</TableCell>
                           </TableRow>

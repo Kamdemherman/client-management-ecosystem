@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -10,15 +11,10 @@ import { format, addDays } from "date-fns";
 import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-
-interface Reservation {
-  id: string;
-  date: Date;
-  clientName: string;
-  productName: string;
-  quantity: number;
-  status: "pending" | "confirmed" | "completed";
-}
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { reservationsService } from "@/services/reservations.service";
+import { clientsService } from "@/services/clients.service";
+import { inventoryService } from "@/services/inventory.service";
 
 const MAX_RESERVATIONS_PER_DAY = 5;
 
@@ -30,21 +26,46 @@ export const ReservationCalendar = () => {
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [reservations, setReservations] = useState<Reservation[]>([
-    {
-      id: "1",
-      date: new Date(),
-      clientName: "Jean Dupont",
-      productName: "Produit A",
-      quantity: 5,
-      status: "pending"
+  const { data: reservations = [] } = useQuery({
+    queryKey: ['reservations'],
+    queryFn: reservationsService.getAll
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: clientsService.getAll
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: inventoryService.getAll
+  });
+
+  const createReservation = useMutation({
+    mutationFn: reservationsService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      setIsDialogOpen(false);
+      resetForm();
+      toast({
+        title: "Réservation créée",
+        description: "La réservation a été créée avec succès"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de la réservation",
+        variant: "destructive"
+      });
     }
-  ]);
+  });
 
   const getReservationsForDate = (date: Date) => {
     return reservations.filter(res => 
-      format(res.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      format(new Date(res.reservationDate), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
   };
 
@@ -52,7 +73,7 @@ export const ReservationCalendar = () => {
     let currentDate = startDate;
     let daysChecked = 0;
     
-    while (daysChecked < 30) { // Limit search to next 30 days
+    while (daysChecked < 30) {
       const reservationsForDay = getReservationsForDate(currentDate);
       if (reservationsForDay.length < MAX_RESERVATIONS_PER_DAY) {
         return currentDate;
@@ -61,7 +82,7 @@ export const ReservationCalendar = () => {
       daysChecked++;
     }
     
-    return addDays(startDate, 1); // Return next day if no slots found
+    return addDays(startDate, 1);
   };
 
   const handleAddReservation = () => {
@@ -87,22 +108,29 @@ export const ReservationCalendar = () => {
       return;
     }
 
-    const newReservation: Reservation = {
-      id: Math.random().toString(36).substr(2, 9),
-      date: selectedDate,
-      clientName,
-      productName,
+    const client = clients.find(c => c.name === clientName);
+    const product = products.find(p => p.name === productName);
+
+    if (!client || !product) {
+      toast({
+        title: "Erreur",
+        description: "Client ou produit invalide",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createReservation.mutate({
+      clientId: client.id.toString(),
+      clientName: client.name,
+      productId: product.id.toString(),
+      productName: product.name,
       quantity: parseInt(quantity),
-      status: "pending"
-    };
-
-    setReservations([...reservations, newReservation]);
-    setIsDialogOpen(false);
-    resetForm();
-
-    toast({
-      title: "Réservation ajoutée",
-      description: `Réservation pour ${clientName} le ${format(selectedDate, 'dd/MM/yyyy')}`,
+      status: "En attente",
+      reservationDate: format(selectedDate, 'yyyy-MM-dd'),
+      deliveryDate: format(addDays(selectedDate, 1), 'yyyy-MM-dd'),
+      agencyId: client.agency,
+      agencyName: client.agency
     });
   };
 
@@ -113,14 +141,14 @@ export const ReservationCalendar = () => {
     setQuantity("");
   };
 
-  const getStatusColor = (status: Reservation["status"]) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
+      case "En attente":
         return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+      case "Confirmée":
         return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
+      case "Annulée":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -148,7 +176,7 @@ export const ReservationCalendar = () => {
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
-                    onClick={() => setSelectedDate(new Date())}
+                    onClick={() => setSelectedDate(date || new Date())}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : "Sélectionner une date"}
@@ -157,11 +185,18 @@ export const ReservationCalendar = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Client</label>
-                <Input
-                  placeholder="Nom du client"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                />
+                <Select value={clientName} onValueChange={setClientName}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.name}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Produit</label>
@@ -170,9 +205,11 @@ export const ReservationCalendar = () => {
                     <SelectValue placeholder="Sélectionner un produit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Produit A">Produit A</SelectItem>
-                    <SelectItem value="Produit B">Produit B</SelectItem>
-                    <SelectItem value="Produit C">Produit C</SelectItem>
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.name}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -198,7 +235,10 @@ export const ReservationCalendar = () => {
             <Calendar
               mode="single"
               selected={date}
-              onSelect={setDate}
+              onSelect={(newDate) => {
+                setDate(newDate);
+                setSelectedDate(newDate);
+              }}
               locale={fr}
               className="rounded-md border"
             />
@@ -209,25 +249,23 @@ export const ReservationCalendar = () => {
               ({date && getReservationsForDate(date).length}/{MAX_RESERVATIONS_PER_DAY})
             </h3>
             <div className="space-y-2">
-              {reservations
-                .filter(res => date && format(res.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
-                .map(reservation => (
-                  <div
-                    key={reservation.id}
-                    className="p-3 border rounded-lg space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{reservation.clientName}</span>
-                      <Badge variant="outline" className={getStatusColor(reservation.status)}>
-                        {reservation.status}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p>{reservation.productName} - {reservation.quantity} unités</p>
-                      <p>{format(reservation.date, 'HH:mm')}</p>
-                    </div>
+              {date && getReservationsForDate(date).map(reservation => (
+                <div
+                  key={reservation.id}
+                  className="p-3 border rounded-lg space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{reservation.clientName}</span>
+                    <Badge variant="outline" className={getStatusColor(reservation.status)}>
+                      {reservation.status}
+                    </Badge>
                   </div>
-                ))}
+                  <div className="text-sm text-gray-600">
+                    <p>{reservation.productName} - {reservation.quantity} unités</p>
+                    <p>{format(new Date(reservation.reservationDate), 'HH:mm')}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
