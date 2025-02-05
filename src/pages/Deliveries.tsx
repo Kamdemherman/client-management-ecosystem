@@ -104,4 +104,75 @@ const Deliveries = () => {
 
   return (
     <DashboardLayout>
-      <div className="space
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Gestion des livraisons</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Add new delivery button */}
+            <Button onClick={() => setIsAddDialogOpen(true)} className="mb-4">
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle livraison
+            </Button>
+
+            {/* Deliveries table */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Adresse</TableHead>
+                  <TableHead>Date prévue</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deliveries.map((delivery) => (
+                  <TableRow key={delivery.id}>
+                    <TableCell>{delivery.id}</TableCell>
+                    <TableCell>{delivery.clientId}</TableCell>
+                    <TableCell>{delivery.address}</TableCell>
+                    <TableCell>{new Date(delivery.scheduledDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge>{delivery.status}</Badge>
+                    </TableCell>
+                    <TableCell className="space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => notifyClient(delivery.id)}
+                      >
+                        <Bell className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedDelivery(delivery);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(delivery.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default Deliveries;
