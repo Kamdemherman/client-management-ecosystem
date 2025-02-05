@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,23 +6,38 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { settingService } from "@/services/api/setting.service";
+import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
-  const [settings, setSettings] = useState({
-    companyName: "AgriManager",
-    email: "contact@agrimanager.com",
-    currency: "EUR",
-    vatRate: "20",
-    deliveryDelay: "2",
-    emailNotifications: true,
-    smsNotifications: false,
-    logo: "",
-    primaryColor: "#00ff00",
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: generalSettings = {} } = useQuery({
+    queryKey: ['settings', 'general'],
+    queryFn: () => settingService.getByGroup('general')
   });
 
-  const handleSave = () => {
-    console.log("Sauvegarde des paramètres:", settings);
+  const { data: notificationSettings = {} } = useQuery({
+    queryKey: ['settings', 'notifications'],
+    queryFn: () => settingService.getByGroup('notifications')
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string, value: any }) => 
+      settingService.update(key, value),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      toast({
+        title: "Paramètres mis à jour",
+        description: "Les paramètres ont été mis à jour avec succès.",
+      });
+    }
+  });
+
+  const handleSave = (key: string, value: any) => {
+    updateMutation.mutate({ key, value });
   };
 
   return (
@@ -46,10 +62,8 @@ const Settings = () => {
                   <Label htmlFor="company-name">Nom de l'entreprise</Label>
                   <Input
                     id="company-name"
-                    value={settings.companyName}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, companyName: e.target.value }))
-                    }
+                    value={generalSettings.companyName || ""}
+                    onChange={(e) => handleSave("companyName", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -57,20 +71,16 @@ const Settings = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={settings.email}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, email: e.target.value }))
-                    }
+                    value={generalSettings.email || ""}
+                    onChange={(e) => handleSave("email", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="currency">Devise</Label>
                   <Input
                     id="currency"
-                    value={settings.currency}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, currency: e.target.value }))
-                    }
+                    value={generalSettings.currency || ""}
+                    onChange={(e) => handleSave("currency", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -78,10 +88,8 @@ const Settings = () => {
                   <Input
                     id="vat"
                     type="number"
-                    value={settings.vatRate}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, vatRate: e.target.value }))
-                    }
+                    value={generalSettings.vatRate || ""}
+                    onChange={(e) => handleSave("vatRate", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -89,13 +97,10 @@ const Settings = () => {
                   <Input
                     id="delivery"
                     type="number"
-                    value={settings.deliveryDelay}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, deliveryDelay: e.target.value }))
-                    }
+                    value={generalSettings.deliveryDelay || ""}
+                    onChange={(e) => handleSave("deliveryDelay", e.target.value)}
                   />
                 </div>
-                <Button onClick={handleSave}>Sauvegarder les modifications</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -110,23 +115,18 @@ const Settings = () => {
                   <Label htmlFor="email-notifications">Notifications par email</Label>
                   <Switch
                     id="email-notifications"
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) =>
-                      setSettings((prev) => ({ ...prev, emailNotifications: checked }))
-                    }
+                    checked={notificationSettings.emailNotifications || false}
+                    onCheckedChange={(checked) => handleSave("emailNotifications", checked)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="sms-notifications">Notifications par SMS</Label>
                   <Switch
                     id="sms-notifications"
-                    checked={settings.smsNotifications}
-                    onCheckedChange={(checked) =>
-                      setSettings((prev) => ({ ...prev, smsNotifications: checked }))
-                    }
+                    checked={notificationSettings.smsNotifications || false}
+                    onCheckedChange={(checked) => handleSave("smsNotifications", checked)}
                   />
                 </div>
-                <Button onClick={handleSave}>Sauvegarder les préférences</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -148,10 +148,7 @@ const Settings = () => {
                       if (file) {
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                          setSettings((prev) => ({
-                            ...prev,
-                            logo: reader.result as string,
-                          }));
+                          handleSave("logo", reader.result);
                         };
                         reader.readAsDataURL(file);
                       }
@@ -163,13 +160,10 @@ const Settings = () => {
                   <Input
                     id="primary-color"
                     type="color"
-                    value={settings.primaryColor}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, primaryColor: e.target.value }))
-                    }
+                    value={generalSettings.primaryColor || "#000000"}
+                    onChange={(e) => handleSave("primaryColor", e.target.value)}
                   />
                 </div>
-                <Button onClick={handleSave}>Sauvegarder l'apparence</Button>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,34 +12,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { User } from "@/types/user";
 import type { Role } from "@/types/role";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { userService } from "@/services/api/user.service";
+import { useToast } from "@/hooks/use-toast";
 
 const Users = () => {
-  const [users] = useState<(User & { role: Role["name"] })[]>([
-    {
-      id: "1",
-      email: "super@example.com",
-      name: "Super Admin",
-      role: "super_admin",
-      createdAt: new Date(),
-      isActive: true,
-    },
-    {
-      id: "2",
-      email: "admin@example.com",
-      name: "Local Admin",
-      role: "admin",
-      createdAt: new Date(),
-      isActive: true,
-    },
-    {
-      id: "3",
-      email: "employee@example.com",
-      name: "Employee",
-      role: "employee",
-      createdAt: new Date(),
-      isActive: true,
-    },
-  ]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: userService.getAll
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: userService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été supprimé avec succès.",
+      });
+    }
+  });
 
   const getRoleBadgeVariant = (role: Role["name"]) => {
     switch (role) {
@@ -67,6 +62,14 @@ const Users = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div>Chargement...</div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -87,7 +90,7 @@ const Users = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
+            {users.map((user: User & { role: Role["name"] }) => (
               <TableRow key={user.id}>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
@@ -109,7 +112,11 @@ const Users = () => {
                     <Button variant="outline" size="sm">
                       Modifier
                     </Button>
-                    <Button variant="destructive" size="sm">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(user.id)}
+                    >
                       Supprimer
                     </Button>
                   </div>

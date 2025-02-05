@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
@@ -9,47 +10,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import type { Log, LogType, LogAction, LogModule } from "@/types/log";
+import type { Log, LogType } from "@/types/log";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Filter } from "lucide-react";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { logService } from "@/services/api/log.service";
 
 const Logs = () => {
-  const [logs] = useState<Log[]>([
-    {
-      id: "1",
-      type: "info",
-      action: "login",
-      module: "users",
-      message: "Connexion utilisateur",
-      userId: "1",
-      userName: "John Doe",
-      agencyId: "1",
-      agencyName: "Agence Paris",
-      createdAt: new Date(),
-    },
-    {
-      id: "2",
-      type: "success",
-      action: "create",
-      module: "inventory",
-      message: "Nouveau produit ajouté",
-      userId: "1",
-      userName: "John Doe",
-      agencyId: "1",
-      agencyName: "Agence Paris",
-      createdAt: new Date(),
-    },
-  ]);
-
   const [filters, setFilters] = useState({
     type: "",
     action: "",
     module: "",
     search: "",
+  });
+
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['logs', filters],
+    queryFn: () => logService.getAll(filters)
   });
 
   const getLogTypeColor = (type: LogType) => {
@@ -65,12 +46,29 @@ const Logs = () => {
     }
   };
 
-  const handleExport = () => {
-    // Pour l'instant, juste un message console
-    console.log("Export des logs...");
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      const blob = await logService.export(format, filters);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logs-${format}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors de l\'export:', error);
+    }
   };
 
-  const filteredLogs = logs.filter((log) => {
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div>Chargement...</div>
+      </DashboardLayout>
+    );
+  }
+
+  const filteredLogs = logs.filter((log: Log) => {
     if (filters.type && log.type !== filters.type) return false;
     if (filters.action && log.action !== filters.action) return false;
     if (filters.module && log.module !== filters.module) return false;
@@ -83,10 +81,16 @@ const Logs = () => {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Logs du Système</h1>
-          <Button onClick={handleExport} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exporter
-          </Button>
+          <div className="space-x-2">
+            <Button onClick={() => handleExport('csv')} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => handleExport('pdf')} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -173,9 +177,9 @@ const Logs = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLogs.map((log) => (
+            {filteredLogs.map((log: Log) => (
               <TableRow key={log.id}>
-                <TableCell>{format(log.createdAt, "dd/MM/yyyy HH:mm:ss")}</TableCell>
+                <TableCell>{format(new Date(log.createdAt), "dd/MM/yyyy HH:mm:ss")}</TableCell>
                 <TableCell>
                   <Badge variant={getLogTypeColor(log.type)}>{log.type}</Badge>
                 </TableCell>

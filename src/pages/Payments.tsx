@@ -1,42 +1,24 @@
-import { useState } from "react";
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { paymentService } from "@/services/api/payment.service";
 import type { Payment } from "@/types/payment";
 
 const Payments = () => {
-  const [payments] = useState<Payment[]>([
-    {
-      id: "PAY001",
-      date: "2024-02-01",
-      amount: "1500€",
-      method: "Carte bancaire",
-      status: "completed",
-      reference: "INV-001",
-      client: "Jean Dupont"
-    },
-    {
-      id: "PAY002",
-      date: "2024-02-02",
-      amount: "2300€",
-      method: "Virement",
-      status: "pending",
-      reference: "INV-002",
-      client: "Marie Martin"
-    },
-    {
-      id: "PAY003",
-      date: "2024-02-03",
-      amount: "800€",
-      method: "Carte bancaire",
-      status: "failed",
-      reference: "INV-003",
-      client: "Pierre Durand"
-    }
-  ]);
+  const { data: payments = [], isLoading } = useQuery({
+    queryKey: ['payments'],
+    queryFn: paymentService.getAll
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['payments', 'stats'],
+    queryFn: paymentService.getStats
+  });
 
   const getStatusBadgeVariant = (status: Payment["status"]) => {
     switch (status) {
@@ -64,6 +46,14 @@ const Payments = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div>Chargement...</div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -81,7 +71,7 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Total des Paiements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4600€</div>
+              <div className="text-2xl font-bold">{stats?.total || "0"}€</div>
             </CardContent>
           </Card>
           <Card>
@@ -89,7 +79,7 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Paiements en Attente</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1</div>
+              <div className="text-2xl font-bold">{stats?.pending || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -97,7 +87,7 @@ const Payments = () => {
               <CardTitle className="text-sm font-medium">Paiements Réussis</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2</div>
+              <div className="text-2xl font-bold">{stats?.completed || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -126,7 +116,7 @@ const Payments = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
+                  {payments.map((payment: Payment) => (
                     <TableRow key={payment.id}>
                       <TableCell>{payment.reference}</TableCell>
                       <TableCell>{payment.client}</TableCell>

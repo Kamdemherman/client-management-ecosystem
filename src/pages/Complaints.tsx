@@ -1,85 +1,61 @@
+
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus } from "lucide-react";
-import { useState } from "react";
 import { ComplaintDialog } from "@/components/complaints/ComplaintDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ComplaintStatus } from "@/types/complaint";
-
-interface Complaint {
-  id: number;
-  client: string;
-  date: string;
-  subject: string;
-  description: string;
-  status: ComplaintStatus;
-}
-
-const mockComplaints: Complaint[] = [
-  { 
-    id: 1, 
-    client: "Jean Dupont", 
-    date: "2024-02-20", 
-    subject: "Retard de livraison",
-    description: "La livraison a plus de 2 jours de retard",
-    status: "En cours" 
-  },
-  { 
-    id: 2, 
-    client: "Marie Martin", 
-    date: "2024-02-19", 
-    subject: "Produit endommagé",
-    description: "Le produit reçu est endommagé",
-    status: "Résolu" 
-  },
-  { 
-    id: 3, 
-    client: "Pierre Durant", 
-    date: "2024-02-18", 
-    subject: "Erreur de commande",
-    description: "Je n'ai pas reçu le bon produit",
-    status: "En attente" 
-  },
-];
+import { complaintService } from "@/services/api/complaint.service";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Complaints = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>(mockComplaints);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: complaints = [], isLoading } = useQuery({
+    queryKey: ['complaints'],
+    queryFn: complaintService.getAll
+  });
+
+  const createMutation = useMutation({
+    mutationFn: complaintService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      toast({
+        title: "Plainte créée",
+        description: "La nouvelle plainte a été enregistrée avec succès.",
+      });
+      setIsDialogOpen(false);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number, status: ComplaintStatus }) => 
+      complaintService.updateStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      toast({
+        title: "Statut mis à jour",
+        description: "Le statut de la plainte a été mis à jour avec succès.",
+      });
+    }
+  });
 
   const handleStatusUpdate = (complaintId: number, newStatus: ComplaintStatus) => {
-    setComplaints(prevComplaints =>
-      prevComplaints.map(complaint =>
-        complaint.id === complaintId
-          ? { ...complaint, status: newStatus }
-          : complaint
-      )
-    );
-    toast({
-      title: "Statut mis à jour",
-      description: "Le statut de la plainte a été mis à jour avec succès.",
-    });
+    updateMutation.mutate({ id: complaintId, status: newStatus });
   };
 
-  const handleAddComplaint = (newComplaint: Omit<Complaint, "id" | "date">) => {
-    const complaint: Complaint = {
-      ...newComplaint,
-      id: complaints.length + 1,
-      date: new Date().toISOString().split('T')[0],
-    };
-    setComplaints(prev => [...prev, complaint]);
-    setIsDialogOpen(false);
-    toast({
-      title: "Plainte ajoutée",
-      description: "La nouvelle plainte a été enregistrée avec succès.",
-    });
+  const handleAddComplaint = (newComplaint: Omit<any, "id" | "date">) => {
+    createMutation.mutate(newComplaint);
   };
 
-  const getStatusBadgeVariant = (status: ComplaintStatus): "default" | "secondary" | "outline" => {
+  const getStatusBadgeVariant = (status: ComplaintStatus) => {
     switch (status) {
       case "En cours":
         return "secondary";
@@ -90,6 +66,14 @@ const Complaints = () => {
         return "default";
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div>Chargement...</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -127,7 +111,7 @@ const Complaints = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {complaints.map((complaint) => (
+                {complaints.map((complaint: any) => (
                   <TableRow key={complaint.id}>
                     <TableCell>{complaint.client}</TableCell>
                     <TableCell>{complaint.date}</TableCell>
