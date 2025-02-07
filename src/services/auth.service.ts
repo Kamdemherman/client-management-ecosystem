@@ -7,6 +7,9 @@ export const authService = {
       const response = await api.post('/auth/login', { email, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        // Stockons également la date d'expiration (24 heures à partir de maintenant)
+        const expiresAt = new Date().getTime() + 24 * 60 * 60 * 1000;
+        localStorage.setItem('tokenExpiresAt', expiresAt.toString());
       }
       return response.data;
     } catch (error) {
@@ -19,6 +22,7 @@ export const authService = {
     try {
       await api.post('/auth/logout');
       localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiresAt');
       return true;
     } catch (error) {
       console.error('Logout error:', error);
@@ -28,8 +32,17 @@ export const authService = {
 
   getCurrentUser: async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    const tokenExpiresAt = localStorage.getItem('tokenExpiresAt');
+
+    if (!token || !tokenExpiresAt) {
       throw new Error('No token found');
+    }
+
+    // Vérifier si le token n'est pas expiré
+    if (new Date().getTime() > parseInt(tokenExpiresAt)) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiresAt');
+      throw new Error('Token expired');
     }
 
     try {
@@ -37,12 +50,21 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Get user error:', error);
-      localStorage.removeItem('token'); // On supprime le token si l'appel échoue
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiresAt');
       throw error;
     }
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    const tokenExpiresAt = localStorage.getItem('tokenExpiresAt');
+
+    if (!token || !tokenExpiresAt) {
+      return false;
+    }
+
+    // Vérifier si le token n'est pas expiré
+    return new Date().getTime() <= parseInt(tokenExpiresAt);
   }
 };

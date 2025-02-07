@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = () => {
   const navigate = useNavigate();
@@ -16,13 +16,15 @@ export const useAuth = () => {
       if (!authService.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsLoading(false);
+        if (location.pathname !== '/login') {
+          navigate('/login');
+        }
         return;
       }
 
       try {
         await authService.getCurrentUser();
         setIsAuthenticated(true);
-        // Si on est sur /login et qu'on est authentifié, on redirige vers /
         if (location.pathname === '/login') {
           navigate('/');
         }
@@ -38,7 +40,7 @@ export const useAuth = () => {
     };
 
     checkAuth();
-  }, [navigate, location]);
+  }, [navigate, location.pathname]);
 
   const login = async (email: string, password: string) => {
     try {
