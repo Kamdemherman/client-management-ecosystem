@@ -16,15 +16,13 @@ export const useAuth = () => {
       if (!authService.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsLoading(false);
-        if (location.pathname !== '/login') {
-          navigate('/login');
-        }
         return;
       }
 
       try {
         await authService.getCurrentUser();
         setIsAuthenticated(true);
+        // Si on est sur /login et qu'on est authentifié, on redirige vers /
         if (location.pathname === '/login') {
           navigate('/');
         }
@@ -40,18 +38,18 @@ export const useAuth = () => {
     };
 
     checkAuth();
-  }, [navigate, location.pathname]);
+  }, [navigate, location]);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await authService.login(email, password);
       if (response.token) {
         setIsAuthenticated(true);
-        navigate('/', { replace: true });
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté",
         });
+        navigate('/');
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -68,7 +66,7 @@ export const useAuth = () => {
     try {
       await authService.logout();
       setIsAuthenticated(false);
-      navigate('/login', { replace: true });
+      navigate('/login');
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès",
