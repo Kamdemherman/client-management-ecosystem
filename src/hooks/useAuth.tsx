@@ -70,7 +70,7 @@ export const useAuth = () => {
         description: "Vous avez été déconnecté avec succès",
       });
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
       toast({
         title: "Erreur de déconnexion",
         description: "Une erreur est survenue lors de la déconnexion",
