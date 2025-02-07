@@ -1,17 +1,19 @@
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useAuth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (!localStorage.getItem('token')) {
+      if (!authService.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
@@ -20,28 +22,35 @@ export const useAuth = () => {
       try {
         await authService.getCurrentUser();
         setIsAuthenticated(true);
+        // Si on est sur /login et qu'on est authentifié, on redirige vers /
+        if (location.pathname === '/login') {
+          navigate('/');
+        }
       } catch (error) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('token');
         setIsAuthenticated(false);
-        navigate('/login');
+        if (location.pathname !== '/login') {
+          navigate('/login');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const login = async (email: string, password: string) => {
     try {
-      await authService.login(email, password);
-      setIsAuthenticated(true);
-      toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté",
-      });
-      navigate('/');
+      const response = await authService.login(email, password);
+      if (response.token) {
+        setIsAuthenticated(true);
+        toast({
+          title: "Connexion réussie",
+          description: "Vous êtes maintenant connecté",
+        });
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login failed:', error);
       toast({
