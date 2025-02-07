@@ -25,9 +25,6 @@ export const useAuth = () => {
       try {
         await authService.getCurrentUser();
         setIsAuthenticated(true);
-        if (location.pathname === '/login') {
-          navigate('/');
-        }
       } catch (error) {
         console.error('Auth check failed:', error);
         setIsAuthenticated(false);
@@ -51,7 +48,6 @@ export const useAuth = () => {
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté",
         });
-        navigate('/');
       }
     } catch (error) {
       console.error('Login failed:', error);
