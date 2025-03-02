@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { useToast } from '@/hooks/use-toast';
@@ -10,27 +9,33 @@ export const useAuth = () => {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(false);
+  const isCheckingRef = useRef<boolean>(false);
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Éviter les vérifications multiples simultanées
-      if (isCheckingAuth) return;
-      setIsCheckingAuth(true);
+      // Prevent multiple simultaneous auth checks
+      if (isCheckingRef.current) {
+        console.log('Auth check already in progress, skipping');
+        return;
+      }
       
-      // Si l'utilisateur est déjà sur la page de connexion, pas besoin de vérification
+      isCheckingRef.current = true;
+      
+      // Skip check on login page
       if (location.pathname === '/login') {
         setIsLoading(false);
-        setIsCheckingAuth(false);
+        isCheckingRef.current = false;
         return;
       }
 
+      // Check if token exists and is valid
       if (!authService.isAuthenticated()) {
+        console.log('Not authenticated according to local check');
         setIsAuthenticated(false);
         setIsLoading(false);
-        setIsCheckingAuth(false);
+        isCheckingRef.current = false;
         
-        // Rediriger vers la page de connexion uniquement si l'utilisateur n'y est pas déjà
+        // Redirect to login if not already there
         if (location.pathname !== '/login') {
           navigate('/login');
         }
@@ -38,32 +43,34 @@ export const useAuth = () => {
       }
 
       try {
-        // Vérifier si l'utilisateur est toujours authentifié avec le backend
+        // Verify authentication with backend
+        console.log('Checking authentication with backend');
         await authService.getCurrentUser();
+        console.log('Authentication verified with backend');
         setIsAuthenticated(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth check failed:', error);
         
-        // Ne déconnecter que si l'erreur est liée à l'authentification (401)
+        // Only redirect on auth errors (401)
         if (error.response && error.response.status === 401) {
+          console.log('Auth error 401, logging out');
           setIsAuthenticated(false);
           
-          // Rediriger uniquement si l'utilisateur n'est pas déjà sur la page de connexion
           if (location.pathname !== '/login') {
             navigate('/login');
           }
         } else {
-          // En cas d'erreur réseau temporaire, on garde l'utilisateur connecté
-          console.warn('Erreur temporaire, l\'utilisateur reste connecté');
+          // For network or server errors, keep current auth state
+          console.log('Network/server error, keeping current auth state');
         }
       } finally {
         setIsLoading(false);
-        setIsCheckingAuth(false);
+        isCheckingRef.current = false;
       }
     };
 
     checkAuth();
-  }, [navigate, location.pathname, isCheckingAuth]);
+  }, [navigate, location.pathname]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -74,10 +81,8 @@ export const useAuth = () => {
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté",
         });
-        
-        // Rediriger vers la page d'accueil après connexion réussie
-        navigate('/');
       }
+      return response;
     } catch (error) {
       console.error('Login failed:', error);
       toast({
@@ -106,7 +111,7 @@ export const useAuth = () => {
         variant: "destructive",
       });
       
-      // Même en cas d'erreur, on déconnecte l'utilisateur côté client
+      // Even with errors, log out on client side
       setIsAuthenticated(false);
       navigate('/login');
     }

@@ -1,15 +1,24 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to home page if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,10 +26,11 @@ const Login = () => {
     
     try {
       await login(email, password);
-      // La redirection est gérée dans le hook useAuth
+      // Navigate to home page after successful login
+      navigate('/');
     } catch (error) {
       console.error("Login error:", error);
-      // Les toasts sont gérés dans le hook useAuth
+      // Toast messages are handled in the useAuth hook
     } finally {
       setIsLoading(false);
     }
