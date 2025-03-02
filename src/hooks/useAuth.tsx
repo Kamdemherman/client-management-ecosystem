@@ -13,6 +13,8 @@ export const useAuth = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('Auth check triggered on path:', location.pathname);
+      
       // Prevent multiple simultaneous auth checks
       if (isCheckingRef.current) {
         console.log('Auth check already in progress, skipping');
@@ -23,13 +25,17 @@ export const useAuth = () => {
       
       // Skip check on login page
       if (location.pathname === '/login') {
+        console.log('On login page, skipping auth check');
         setIsLoading(false);
         isCheckingRef.current = false;
         return;
       }
 
       // Check if token exists and is valid
-      if (!authService.isAuthenticated()) {
+      const localAuthStatus = authService.isAuthenticated();
+      console.log('Local auth check result:', localAuthStatus);
+      
+      if (!localAuthStatus) {
         console.log('Not authenticated according to local check');
         setIsAuthenticated(false);
         setIsLoading(false);
@@ -37,6 +43,7 @@ export const useAuth = () => {
         
         // Redirect to login if not already there
         if (location.pathname !== '/login') {
+          console.log('Redirecting to login page');
           navigate('/login');
         }
         return;
@@ -51,9 +58,13 @@ export const useAuth = () => {
       } catch (error: any) {
         console.error('Auth check failed:', error);
         
-        // Only redirect on auth errors (401)
-        if (error.response && error.response.status === 401) {
-          console.log('Auth error 401, logging out');
+        // Only redirect on auth errors (401) or token missing/expired
+        if (
+          (error.response && error.response.status === 401) || 
+          error.message === 'No token found' || 
+          error.message === 'Token expired'
+        ) {
+          console.log('Auth error, logging out');
           setIsAuthenticated(false);
           
           if (location.pathname !== '/login') {
@@ -61,7 +72,7 @@ export const useAuth = () => {
           }
         } else {
           // For network or server errors, keep current auth state
-          console.log('Network/server error, keeping current auth state');
+          console.log('Network/server error, keeping current auth state:', isAuthenticated);
         }
       } finally {
         setIsLoading(false);
@@ -74,8 +85,12 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('Login attempt initiated');
       const response = await authService.login(email, password);
+      console.log('Login API response received');
+      
       if (response.token) {
+        console.log('Setting authenticated state to true');
         setIsAuthenticated(true);
         toast({
           title: "Connexion réussie",

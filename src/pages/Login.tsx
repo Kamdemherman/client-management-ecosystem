@@ -13,20 +13,27 @@ const Login = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  console.log("Login page rendered, auth state:", isAuthenticated);
+
   // Redirect to home page if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      console.log("Already authenticated, redirecting to home");
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Login form submitted with email:", email);
     setIsLoading(true);
     
     try {
+      console.log("Calling login function");
       await login(email, password);
-      // Navigate to home page after successful login
+      
+      // Explicitly navigate after successful login
+      console.log("Login successful, navigating to home");
       navigate('/');
     } catch (error) {
       console.error("Login error:", error);
