@@ -14,14 +14,30 @@ export const clientsService = {
   },
 
   create: async (formData: FormData): Promise<Client> => {
-    const data = Object.fromEntries(formData.entries());
-    const response = await api.post('/clients', data);
+    console.log('Creating client with form data:', Object.fromEntries(formData.entries()));
+    
+    // Nous envoyons directement le FormData pour que les fichiers soient correctement gérés
+    const response = await api.post('/clients', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Important pour les fichiers
+      },
+    });
+    
+    console.log('Client creation response:', response.data);
     return response.data;
   },
 
   update: async (id: number, formData: FormData): Promise<Client> => {
-    const data = Object.fromEntries(formData.entries());
-    const response = await api.put(`/clients/${id}`, data);
+    console.log('Updating client with form data:', Object.fromEntries(formData.entries()));
+    
+    // Nous envoyons directement le FormData pour que les fichiers soient correctement gérés
+    const response = await api.put(`/clients/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Important pour les fichiers
+      },
+    });
+    
+    console.log('Client update response:', response.data);
     return response.data;
   },
 

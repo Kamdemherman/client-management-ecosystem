@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               id="name" 
               name="name"
               defaultValue={client?.name} 
+              required
             />
           </div>
           <div className="space-y-2">
@@ -34,6 +36,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               name="email"
               type="email" 
               defaultValue={client?.email} 
+              required
             />
           </div>
         </div>
@@ -44,14 +47,17 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               id="phone" 
               name="phone"
               defaultValue={client?.phone} 
+              required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="clientId">Identifiant client</Label>
             <Input 
               id="clientId" 
+              name="clientId"
               defaultValue={client?.clientId} 
               disabled={!!client}
+              required={!client}
             />
           </div>
         </div>
@@ -61,6 +67,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             id="address" 
             name="address"
             defaultValue={client?.address} 
+            required
           />
         </div>
         <div className="space-y-2">
@@ -69,12 +76,13 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             id="farmInfo" 
             name="farmInfo"
             defaultValue={client?.farmInfo}
+            required
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="status">Statut</Label>
-            <Select name="status" defaultValue={client?.status}>
+            <Select name="status" defaultValue={client?.status || "Actif"}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un statut" />
               </SelectTrigger>
@@ -85,16 +93,30 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">
-              {client ? "Nouveau mot de passe" : "Mot de passe temporaire"}
-            </Label>
-            <Input 
-              id="password" 
-              name="password"
-              type="password"
-              placeholder={client ? "Laisser vide pour ne pas modifier" : undefined}
-            />
+            <Label htmlFor="region">Région</Label>
+            <Select name="region" defaultValue={client?.region || "Nord"}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une région" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Nord">Nord</SelectItem>
+                <SelectItem value="Sud">Sud</SelectItem>
+                <SelectItem value="Est">Est</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">
+            {client ? "Nouveau mot de passe" : "Mot de passe temporaire"}
+          </Label>
+          <Input 
+            id="password" 
+            name="password"
+            type="password"
+            placeholder={client ? "Laisser vide pour ne pas modifier" : undefined}
+            required={!client}
+          />
         </div>
       </div>
       <div className="flex justify-end">
