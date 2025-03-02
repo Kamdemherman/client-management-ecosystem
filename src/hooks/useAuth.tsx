@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
@@ -10,6 +11,7 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const isCheckingRef = useRef<boolean>(false);
+  const initialCheckDoneRef = useRef<boolean>(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,6 +30,7 @@ export const useAuth = () => {
         console.log('On login page, skipping auth check');
         setIsLoading(false);
         isCheckingRef.current = false;
+        initialCheckDoneRef.current = true;
         return;
       }
 
@@ -40,6 +43,7 @@ export const useAuth = () => {
         setIsAuthenticated(false);
         setIsLoading(false);
         isCheckingRef.current = false;
+        initialCheckDoneRef.current = true;
         
         // Redirect to login if not already there
         if (location.pathname !== '/login') {
@@ -77,6 +81,7 @@ export const useAuth = () => {
       } finally {
         setIsLoading(false);
         isCheckingRef.current = false;
+        initialCheckDoneRef.current = true;
       }
     };
 
@@ -89,15 +94,26 @@ export const useAuth = () => {
       const response = await authService.login(email, password);
       console.log('Login API response received');
       
-      if (response.token) {
+      // Check both token formats
+      const token = response.token || response.access_token;
+      
+      if (token) {
         console.log('Setting authenticated state to true');
         setIsAuthenticated(true);
         toast({
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté",
         });
+        return response;
+      } else {
+        console.error('No token in response:', response);
+        toast({
+          title: "Erreur de connexion", 
+          description: "Réponse du serveur invalide",
+          variant: "destructive",
+        });
+        throw new Error('No token in response');
       }
-      return response;
     } catch (error) {
       console.error('Login failed:', error);
       toast({

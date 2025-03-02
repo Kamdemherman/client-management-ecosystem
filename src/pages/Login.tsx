@@ -32,9 +32,11 @@ const Login = () => {
       console.log("Calling login function");
       await login(email, password);
       
-      // Explicitly navigate after successful login
-      console.log("Login successful, navigating to home");
-      navigate('/');
+      // Add a small delay before navigating to ensure token is stored
+      setTimeout(() => {
+        console.log("Login successful, navigating to home");
+        navigate('/');
+      }, 100);
     } catch (error) {
       console.error("Login error:", error);
       // Toast messages are handled in the useAuth hook

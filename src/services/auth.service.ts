@@ -7,19 +7,28 @@ export const authService = {
       console.log('Login attempt for:', email);
       const response = await api.post('/auth/login', { email, password });
       
-      if (response.data.token) {
+      console.log('Login response:', response.data);
+      
+      // Check both response.data.token and response.data.access_token (common API pattern)
+      const token = response.data.token || response.data.access_token;
+      
+      if (token) {
         // Store token in localStorage with consistent format
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', token);
         
         // Store expiration (24 hours from now)
         const expiresAt = new Date().getTime() + 24 * 60 * 60 * 1000;
         localStorage.setItem('tokenExpiresAt', expiresAt.toString());
         
         // Add debug logs to verify token storage
-        console.log('Token stored successfully:', !!response.data.token);
+        console.log('Token stored successfully:', !!token);
         console.log('Token expiration set to:', new Date(expiresAt).toISOString());
+        
+        // Verify token was stored
+        const storedToken = localStorage.getItem('token');
+        console.log('Token in localStorage after storing:', storedToken ? 'Present' : 'Missing');
       } else {
-        console.error('Login response did not contain a token');
+        console.error('Login response did not contain a token:', response.data);
       }
       
       return response.data;
