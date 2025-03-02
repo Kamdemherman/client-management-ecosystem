@@ -27,6 +27,10 @@ export const authService = {
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
+    } finally {
+      // Assurons-nous que les tokens sont supprimés même en cas d'erreur
+      localStorage.removeItem('token');
+      localStorage.removeItem('tokenExpiresAt');
     }
   },
 
@@ -50,8 +54,11 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Get user error:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('tokenExpiresAt');
+      // Ne supprimons pas automatiquement le token en cas d'erreur réseau temporaire
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('tokenExpiresAt');
+      }
       throw error;
     }
   },

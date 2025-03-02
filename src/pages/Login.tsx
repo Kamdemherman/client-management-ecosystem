@@ -1,35 +1,26 @@
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { authService } from "@/services/auth.service";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      await authService.login(email, password);
-      toast({
-        title: "Connexion réussie",
-        description: "Bienvenue dans votre espace",
-      });
-      navigate("/");
+      await login(email, password);
+      // La redirection est gérée dans le hook useAuth
     } catch (error) {
-      toast({
-        title: "Erreur de connexion",
-        description: "Email ou mot de passe incorrect",
-        variant: "destructive",
-      });
+      console.error("Login error:", error);
+      // Les toasts sont gérés dans le hook useAuth
     } finally {
       setIsLoading(false);
     }
