@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Users, BadgeDollarSign, Flag } from "lucide-react";
 import { Agency } from "@/types/agency";
@@ -9,8 +10,23 @@ interface AgencyStatsProps {
 export const AgencyStats = ({ agencies }: AgencyStatsProps) => {
   const totalAgencies = agencies.length;
   const activeAgencies = agencies.filter(a => a.status === "Actif").length;
-  const totalEmployees = agencies.reduce((sum, agency) => sum + agency.employeeCount, 0);
-  const totalComplaints = agencies.reduce((sum, agency) => sum + agency.complaints.total, 0);
+  const totalEmployees = agencies.reduce((sum, agency) => sum + (agency.employeeCount || 0), 0);
+  
+  // Safely calculate complaints by checking if the complaints property and its total exist
+  const totalComplaints = agencies.reduce((sum, agency) => {
+    if (agency.complaints && agency.complaints.total !== undefined) {
+      return sum + agency.complaints.total;
+    }
+    return sum;
+  }, 0);
+
+  // Similarly, safely calculate resolved complaints
+  const resolvedComplaints = agencies.reduce((sum, agency) => {
+    if (agency.complaints && agency.complaints.resolved !== undefined) {
+      return sum + agency.complaints.resolved;
+    }
+    return sum;
+  }, 0);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -34,7 +50,7 @@ export const AgencyStats = ({ agencies }: AgencyStatsProps) => {
         <CardContent>
           <div className="text-2xl font-bold">{totalEmployees}</div>
           <p className="text-xs text-muted-foreground">
-            Moyenne: {Math.round(totalEmployees / totalAgencies)} par agence
+            Moyenne: {totalAgencies > 0 ? Math.round(totalEmployees / totalAgencies) : 0} par agence
           </p>
         </CardContent>
       </Card>
@@ -45,7 +61,12 @@ export const AgencyStats = ({ agencies }: AgencyStatsProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {agencies.reduce((sum, agency) => sum + agency.revenue.yearly, 0).toLocaleString()}€
+            {agencies.reduce((sum, agency) => {
+              if (agency.revenue && agency.revenue.yearly !== undefined) {
+                return sum + agency.revenue.yearly;
+              }
+              return sum;
+            }, 0).toLocaleString()}€
           </div>
           <p className="text-xs text-muted-foreground">
             Année en cours
@@ -60,7 +81,7 @@ export const AgencyStats = ({ agencies }: AgencyStatsProps) => {
         <CardContent>
           <div className="text-2xl font-bold">{totalComplaints}</div>
           <p className="text-xs text-muted-foreground">
-            {agencies.reduce((sum, agency) => sum + agency.complaints.resolved, 0)} résolues
+            {resolvedComplaints} résolues
           </p>
         </CardContent>
       </Card>

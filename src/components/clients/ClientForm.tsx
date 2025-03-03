@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Client } from "@/types/client";
+import { useQuery } from "@tanstack/react-query";
+import { agenciesService } from "@/services/agencies.service";
 
 interface ClientFormProps {
   client?: Client;
@@ -12,10 +14,24 @@ interface ClientFormProps {
 }
 
 export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
+  // Fetch agencies for the dropdown
+  const { data: agencies = [] } = useQuery({
+    queryKey: ['agencies'],
+    queryFn: agenciesService.getAll
+  });
+
   return (
     <form onSubmit={(e) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
+      
+      // Ensure the field name is farm_info (not farmInfo)
+      const farmInfo = formData.get('farmInfo');
+      if (farmInfo) {
+        formData.delete('farmInfo');
+        formData.append('farm_info', farmInfo.toString());
+      }
+      
       onSubmit(formData);
     }}>
       <div className="grid gap-4 py-4">
@@ -105,6 +121,21 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="agency_id">Agence</Label>
+          <Select name="agency_id" defaultValue={client?.agency_id?.toString() || ""} required>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner une agence" />
+            </SelectTrigger>
+            <SelectContent>
+              {agencies.map((agency) => (
+                <SelectItem key={agency.id} value={agency.id.toString()}>
+                  {agency.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">
