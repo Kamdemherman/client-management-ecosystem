@@ -124,7 +124,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={client?.agency_id?.toString() || ""} required>
+          <Select name="agency_id" defaultValue={client?.agency ? client.agency.toString() : ""} required>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>
