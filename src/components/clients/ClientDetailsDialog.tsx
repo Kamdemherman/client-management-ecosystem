@@ -40,6 +40,13 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
     enabled: open
   });
 
+  const formatAgency = (agency: any) => {
+    if (typeof agency === 'object' && agency !== null) {
+      return agency.name || JSON.stringify(agency);
+    }
+    return String(agency);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
@@ -71,7 +78,7 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
                 </div>
                 <div>
                   <p className="text-sm font-medium">Agence</p>
-                  <p className="text-sm text-muted-foreground">{client.agency}</p>
+                  <p className="text-sm text-muted-foreground">{formatAgency(client.agency)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Statut</p>

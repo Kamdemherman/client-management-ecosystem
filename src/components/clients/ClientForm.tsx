@@ -19,6 +19,13 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
     queryFn: agenciesService.getAll
   });
 
+  const getAgencyId = (agency: any): string => {
+    if (typeof agency === 'object' && agency !== null) {
+      return agency.id?.toString() || '';
+    }
+    return agency?.toString() || '';
+  };
+
   return (
     <form onSubmit={(e) => {
       e.preventDefault();
@@ -128,7 +135,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={client?.agency ? client.agency.toString() : ""} required>
+          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)} required>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>

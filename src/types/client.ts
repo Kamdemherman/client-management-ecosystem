@@ -1,3 +1,4 @@
+
 export interface Client {
   id: number;
   name: string;
@@ -14,5 +15,5 @@ export interface Client {
   pendingOrders: number;
   mostOrdered: string;
   orderFrequency: string;
-  agency: string;
+  agency: string | { id: number; name: string } | any;
 }

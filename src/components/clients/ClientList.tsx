@@ -1,3 +1,4 @@
+
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
               {client.name}
             </TableCell>
             <TableCell>{client.region}</TableCell>
-            <TableCell>{client.agency}</TableCell>
+            <TableCell>{typeof client.agency === 'object' ? client.agency.name || String(client.agency) : client.agency}</TableCell>
             <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
             <TableCell>{client.pendingOrders}</TableCell>
             <TableCell>{client.mostOrdered}</TableCell>
