@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,9 +22,9 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
 
   const getAgencyId = (agency: any): string => {
     if (typeof agency === 'object' && agency !== null) {
-      return agency.id?.toString() || '';
+      return agency.id?.toString() || '1'; // Default to '1' if id is missing
     }
-    return agency?.toString() || '';
+    return agency?.toString() || '1'; // Default to '1' if agency is missing
   };
 
   return (
@@ -129,13 +130,15 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
                 <SelectItem value="Nord">Nord</SelectItem>
                 <SelectItem value="Sud">Sud</SelectItem>
                 <SelectItem value="Est">Est</SelectItem>
+                <SelectItem value="Ouest">Ouest</SelectItem>
+                <SelectItem value="Centre">Centre</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)} required>
+          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>

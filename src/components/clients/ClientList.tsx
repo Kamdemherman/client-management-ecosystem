@@ -14,6 +14,20 @@ interface ClientListProps {
 }
 
 export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProps) => {
+  // Helper function to safely display agency name
+  const displayAgencyName = (agency: any): string => {
+    if (!agency) return '';
+    if (typeof agency === 'object' && agency.name) return agency.name;
+    return String(agency);
+  };
+
+  // Helper function to safely format volume
+  const formatVolume = (volume: string | number): string => {
+    if (volume === null || volume === undefined) return '0 F';
+    const numValue = typeof volume === 'string' ? parseInt(volume) : volume;
+    return isNaN(numValue) ? '0 F' : `${numValue.toLocaleString()} F`;
+  };
+  
   return (
     <Table>
       <TableHeader>
@@ -39,14 +53,14 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
               </Avatar>
               {client.name}
             </TableCell>
-            <TableCell>{client.phone}</TableCell>
+            <TableCell>{client.phone || 'N/A'}</TableCell>
             <TableCell className="max-w-[200px] truncate" title={client.address}>
-              {client.address}
+              {client.address || 'N/A'}
             </TableCell>
-            <TableCell>{client.region}</TableCell>
-            <TableCell>{typeof client.agency === 'object' ? client.agency.name || String(client.agency) : client.agency}</TableCell>
-            <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
-            <TableCell>{client.pendingOrders}</TableCell>
+            <TableCell>{client.region || 'N/A'}</TableCell>
+            <TableCell>{displayAgencyName(client.agency)}</TableCell>
+            <TableCell>{formatVolume(client.volume)}</TableCell>
+            <TableCell>{client.pendingOrders || 0}</TableCell>
             <TableCell>
               <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
                 {client.status}
