@@ -53,7 +53,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="name" 
               name="name"
-              defaultValue={client?.name} 
+              defaultValue={client?.name || ""} 
               required
             />
           </div>
@@ -63,7 +63,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               id="email" 
               name="email"
               type="email" 
-              defaultValue={client?.email} 
+              defaultValue={client?.email || ""} 
               required
             />
           </div>
@@ -74,7 +74,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="phone" 
               name="phone"
-              defaultValue={client?.phone} 
+              defaultValue={client?.phone || ""} 
               required
             />
           </div>
@@ -83,7 +83,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="clientId" 
               name="clientId"
-              defaultValue={client?.clientId} 
+              defaultValue={client?.clientId || ""} 
               disabled={!!client}
               required={!client}
             />
@@ -94,7 +94,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
           <Textarea 
             id="address" 
             name="address"
-            defaultValue={client?.address} 
+            defaultValue={client?.address || ""} 
             required
           />
         </div>
@@ -103,7 +103,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
           <Textarea 
             id="farmInfo" 
             name="farmInfo"
-            defaultValue={client?.farmInfo}
+            defaultValue={client?.farmInfo || ""}
             required
           />
         </div>
@@ -143,11 +143,15 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>
             <SelectContent>
-              {agencies.map((agency) => (
-                <SelectItem key={agency.id} value={agency.id.toString()}>
-                  {agency.name}
-                </SelectItem>
-              ))}
+              {agencies.length > 0 ? (
+                agencies.map((agency) => (
+                  <SelectItem key={agency.id} value={agency.id.toString()}>
+                    {agency.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="1">Agence par défaut</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>

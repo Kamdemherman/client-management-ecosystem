@@ -16,15 +16,15 @@ interface ClientListProps {
 export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProps) => {
   // Helper function to safely display agency name
   const displayAgencyName = (agency: any): string => {
-    if (!agency) return '';
+    if (!agency) return 'Non assigné';
     if (typeof agency === 'object' && agency.name) return agency.name;
     return String(agency);
   };
 
   // Helper function to safely format volume
-  const formatVolume = (volume: string | number): string => {
-    if (volume === null || volume === undefined) return '0 F';
-    const numValue = typeof volume === 'string' ? parseInt(volume) : volume;
+  const formatVolume = (volume: string | number | undefined | null): string => {
+    if (volume === null || volume === undefined || volume === '') return '0 F';
+    const numValue = typeof volume === 'string' ? parseFloat(volume) : volume;
     return isNaN(numValue) ? '0 F' : `${numValue.toLocaleString()} F`;
   };
   
@@ -49,9 +49,9 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell className="flex items-center gap-2">
               <Avatar>
                 <AvatarImage src={client.avatar} />
-                <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{client.name?.substring(0, 2).toUpperCase() || 'CL'}</AvatarFallback>
               </Avatar>
-              {client.name}
+              {client.name || 'Sans nom'}
             </TableCell>
             <TableCell>{client.phone || 'N/A'}</TableCell>
             <TableCell className="max-w-[200px] truncate" title={client.address}>
@@ -63,7 +63,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell>{client.pendingOrders || 0}</TableCell>
             <TableCell>
               <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
-                {client.status}
+                {client.status || 'Inconnu'}
               </Badge>
             </TableCell>
             <TableCell>
