@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +29,11 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
       if (farmInfo) {
         formData.delete('farmInfo');
         formData.append('farm_info', farmInfo.toString());
+      }
+      
+      // If we're updating a client, add the ID to the form data
+      if (client?.id) {
+        formData.append('id', client.id.toString());
       }
       
       onSubmit(formData);
