@@ -19,12 +19,12 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
       <TableHeader>
         <TableRow>
           <TableHead>Client</TableHead>
+          <TableHead>Téléphone</TableHead>
+          <TableHead>Adresse</TableHead>
           <TableHead>Région</TableHead>
           <TableHead>Agence</TableHead>
           <TableHead>Volume d'Affaires</TableHead>
           <TableHead>Commandes en Attente</TableHead>
-          <TableHead>Produit le + Commandé</TableHead>
-          <TableHead>Fréquence</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
@@ -39,12 +39,14 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
               </Avatar>
               {client.name}
             </TableCell>
+            <TableCell>{client.phone}</TableCell>
+            <TableCell className="max-w-[200px] truncate" title={client.address}>
+              {client.address}
+            </TableCell>
             <TableCell>{client.region}</TableCell>
             <TableCell>{typeof client.agency === 'object' ? client.agency.name || String(client.agency) : client.agency}</TableCell>
             <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
             <TableCell>{client.pendingOrders}</TableCell>
-            <TableCell>{client.mostOrdered}</TableCell>
-            <TableCell>{client.orderFrequency}</TableCell>
             <TableCell>
               <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
                 {client.status}
@@ -56,6 +58,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
                   variant="ghost" 
                   size="icon"
                   onClick={() => onView(client)}
+                  title="Voir détails"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
@@ -63,6 +66,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
                   variant="ghost" 
                   size="icon"
                   onClick={() => onEdit(client)}
+                  title="Modifier"
                 >
                   <Edit className="w-4 h-4" />
                 </Button>
@@ -70,6 +74,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
                   variant="ghost" 
                   size="icon"
                   onClick={() => onDelete(client)}
+                  title="Supprimer"
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>

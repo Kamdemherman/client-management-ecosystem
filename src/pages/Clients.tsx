@@ -1,10 +1,11 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Search, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ const Clients = () => {
   const [filterRegion, setFilterRegion] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,7 +43,8 @@ const Clients = () => {
         description: "Le nouveau client a été créé avec succès.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error creating client:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la création du client.",
@@ -61,7 +64,8 @@ const Clients = () => {
         description: "Les informations du client ont été mises à jour avec succès.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error updating client:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour du client.",
@@ -74,12 +78,14 @@ const Clients = () => {
     mutationFn: (id: number) => clientsService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      setClientToDelete(null);
       toast({
         title: "Client supprimé",
         description: "Le client a été supprimé avec succès.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error deleting client:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la suppression du client.",
@@ -98,8 +104,10 @@ const Clients = () => {
     }
   };
 
-  const handleDeleteClient = (client: Client) => {
-    deleteMutation.mutate(client.id);
+  const handleConfirmDelete = () => {
+    if (clientToDelete) {
+      deleteMutation.mutate(clientToDelete.id);
+    }
   };
 
   const filteredClients = clients.filter(client => 
@@ -112,6 +120,8 @@ const Clients = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const regions = Array.from(new Set(clients.map(client => client.region))).filter(Boolean);
 
   if (isLoading) {
     return <div>Chargement...</div>;
@@ -164,10 +174,10 @@ const Clients = () => {
                   <SelectValue placeholder="Filtrer par région" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les régions</SelectItem>
-                  <SelectItem value="Nord">Nord</SelectItem>
-                  <SelectItem value="Sud">Sud</SelectItem>
-                  <SelectItem value="Est">Est</SelectItem>
+                  <SelectItem value="">Toutes les régions</SelectItem>
+                  {regions.map((region) => (
+                    <SelectItem key={region} value={region}>{region}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -177,9 +187,7 @@ const Clients = () => {
               clients={paginatedClients}
               onView={setSelectedClient}
               onEdit={setEditingClient}
-              onDelete={(client) => {
-                handleDeleteClient(client);
-              }}
+              onDelete={setClientToDelete}
             />
 
             <div className="flex items-center justify-between space-x-2 py-4">
@@ -192,13 +200,13 @@ const Clients = () => {
                 Précédent
               </Button>
               <div className="text-sm text-muted-foreground">
-                Page {currentPage} sur {totalPages}
+                Page {currentPage} sur {totalPages || 1}
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
               >
                 Suivant
               </Button>
@@ -230,19 +238,20 @@ const Clients = () => {
         onOpenChange={(open) => !open && setSelectedClient(null)}
       />
 
-      <AlertDialog>
+      <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. Cela supprimera définitivement le compte client
-              et toutes les données associées.
+              {clientToDelete && ` ${clientToDelete.name}`} et toutes les données associées.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
             >
               Supprimer
             </AlertDialogAction>
