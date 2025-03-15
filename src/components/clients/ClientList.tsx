@@ -58,58 +58,66 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
         </TableRow>
       </TableHeader>
       <TableBody>
-        {clients.map((client) => (
-          <TableRow key={client.id}>
-            <TableCell className="flex items-center gap-2">
-              <Avatar>
-                <AvatarImage src={client.avatar} />
-                <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
-              </Avatar>
-              {client.name || 'Sans nom'}
-            </TableCell>
-            <TableCell>{client.phone || 'N/A'}</TableCell>
-            <TableCell className="max-w-[200px] truncate" title={client.address}>
-              {client.address || 'N/A'}
-            </TableCell>
-            <TableCell>{getRegion(client.region)}</TableCell>
-            <TableCell>{displayAgencyName(client.agency)}</TableCell>
-            <TableCell>{formatVolume(client.volume)}</TableCell>
-            <TableCell>{client.pendingOrders || 0}</TableCell>
-            <TableCell>
-              <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
-                {client.status || 'Inconnu'}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => onView(client)}
-                  title="Voir détails"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => onEdit(client)}
-                  title="Modifier"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => onDelete(client)}
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
+        {clients.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+              Aucun client trouvé
             </TableCell>
           </TableRow>
-        ))}
+        ) : (
+          clients.map((client) => (
+            <TableRow key={client.id}>
+              <TableCell className="flex items-center gap-2">
+                <Avatar>
+                  <AvatarImage src={client.avatar} />
+                  <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
+                </Avatar>
+                {client.name || 'Sans nom'}
+              </TableCell>
+              <TableCell>{client.phone || 'N/A'}</TableCell>
+              <TableCell className="max-w-[200px] truncate" title={client.address}>
+                {client.address || 'N/A'}
+              </TableCell>
+              <TableCell>{getRegion(client.region)}</TableCell>
+              <TableCell>{displayAgencyName(client.agency)}</TableCell>
+              <TableCell>{formatVolume(client.volume)}</TableCell>
+              <TableCell>{client.pendingOrders || 0}</TableCell>
+              <TableCell>
+                <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
+                  {client.status || 'Inconnu'}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onView(client)}
+                    title="Voir détails"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onEdit(client)}
+                    title="Modifier"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onDelete(client)}
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
   );
