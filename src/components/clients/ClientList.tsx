@@ -57,7 +57,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell className="max-w-[200px] truncate" title={client.address}>
               {client.address || 'N/A'}
             </TableCell>
-            <TableCell>{client.region || 'N/A'}</TableCell>
+            <TableCell>{client.region || 'Non spécifiée'}</TableCell>
             <TableCell>{displayAgencyName(client.agency)}</TableCell>
             <TableCell>{formatVolume(client.volume)}</TableCell>
             <TableCell>{client.pendingOrders || 0}</TableCell>
