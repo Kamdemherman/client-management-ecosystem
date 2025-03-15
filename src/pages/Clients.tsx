@@ -121,7 +121,10 @@ const Clients = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const regions = Array.from(new Set(clients.map(client => client.region))).filter(Boolean);
+  // Get unique, non-empty regions from clients
+  const regions = Array.from(
+    new Set(clients.map(client => client.region).filter(Boolean))
+  );
 
   if (isLoading) {
     return <div>Chargement...</div>;
