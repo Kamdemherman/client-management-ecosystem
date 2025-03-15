@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { agenciesService } from "@/services/agencies.service";
+import { useEffect, useState } from "react";
 
 interface ClientFormProps {
   client?: Client;
@@ -20,12 +21,17 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
     queryFn: agenciesService.getAll
   });
 
-  const getAgencyId = (agency: any): string => {
-    if (typeof agency === 'object' && agency !== null) {
-      return agency.id?.toString() || '1'; // Default to '1' if id is missing
+  const [defaultAgencyId, setDefaultAgencyId] = useState<string>("1");
+
+  useEffect(() => {
+    if (client?.agency) {
+      if (typeof client.agency === 'object' && client.agency !== null) {
+        setDefaultAgencyId(client.agency.id?.toString() || "1");
+      } else {
+        setDefaultAgencyId(client.agency?.toString() || "1");
+      }
     }
-    return agency?.toString() || '1'; // Default to '1' if agency is missing
-  };
+  }, [client]);
 
   return (
     <form onSubmit={(e) => {
@@ -132,18 +138,19 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
                 <SelectItem value="Est">Est</SelectItem>
                 <SelectItem value="Ouest">Ouest</SelectItem>
                 <SelectItem value="Centre">Centre</SelectItem>
+                <SelectItem value="Non_specifie">Non spécifiée</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)}>
+          <Select name="agency_id" defaultValue={defaultAgencyId}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>
             <SelectContent>
-              {agencies.length > 0 ? (
+              {agencies && agencies.length > 0 ? (
                 agencies.map((agency) => (
                   <SelectItem key={agency.id} value={agency.id.toString()}>
                     {agency.name}

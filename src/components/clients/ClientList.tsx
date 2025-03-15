@@ -17,15 +17,29 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
   // Helper function to safely display agency name
   const displayAgencyName = (agency: any): string => {
     if (!agency) return 'Non assigné';
-    if (typeof agency === 'object' && agency.name) return agency.name;
+    if (typeof agency === 'object' && agency !== null && agency.name) {
+      return String(agency.name);
+    }
     return String(agency);
   };
 
   // Helper function to safely format volume
   const formatVolume = (volume: string | number | undefined | null): string => {
     if (volume === null || volume === undefined || volume === '') return '0 F';
-    const numValue = typeof volume === 'string' ? parseFloat(volume) : volume;
+    const numValue = typeof volume === 'string' ? parseFloat(volume) : Number(volume);
     return isNaN(numValue) ? '0 F' : `${numValue.toLocaleString()} F`;
+  };
+  
+  // Helper function to safely get initials
+  const getInitials = (name: string | undefined | null): string => {
+    if (!name) return 'CL';
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  // Helper function to safely get region
+  const getRegion = (region: string | undefined | null): string => {
+    if (!region) return 'Non spécifiée';
+    return region === '' ? 'Non spécifiée' : region;
   };
   
   return (
@@ -49,7 +63,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell className="flex items-center gap-2">
               <Avatar>
                 <AvatarImage src={client.avatar} />
-                <AvatarFallback>{client.name?.substring(0, 2).toUpperCase() || 'CL'}</AvatarFallback>
+                <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
               </Avatar>
               {client.name || 'Sans nom'}
             </TableCell>
@@ -57,7 +71,7 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell className="max-w-[200px] truncate" title={client.address}>
               {client.address || 'N/A'}
             </TableCell>
-            <TableCell>{client.region || 'Non spécifiée'}</TableCell>
+            <TableCell>{getRegion(client.region)}</TableCell>
             <TableCell>{displayAgencyName(client.agency)}</TableCell>
             <TableCell>{formatVolume(client.volume)}</TableCell>
             <TableCell>{client.pendingOrders || 0}</TableCell>
