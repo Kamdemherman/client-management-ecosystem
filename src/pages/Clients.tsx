@@ -21,7 +21,7 @@ const ITEMS_PER_PAGE = 5;
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRegion, setFilterRegion] = useState<string | null>(null);
+  const [filterRegion, setFilterRegion] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
@@ -110,11 +110,10 @@ const Clients = () => {
     }
   };
 
-  const filteredClients = clients.filter(client => {
-    const nameMatch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const regionMatch = !filterRegion || client.region === filterRegion;
-    return nameMatch && regionMatch;
-  });
+  const filteredClients = clients.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterRegion === "" || client.region === filterRegion)
+  );
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
   const paginatedClients = filteredClients.slice(
@@ -122,14 +121,7 @@ const Clients = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Get unique, non-empty regions from clients that are valid strings
-  const regions = Array.from(
-    new Set(
-      clients
-        .map(client => client.region)
-        .filter(region => region && typeof region === 'string' && region.trim() !== '')
-    )
-  );
+  const regions = Array.from(new Set(clients.map(client => client.region))).filter(Boolean);
 
   if (isLoading) {
     return <div>Chargement...</div>;
@@ -177,7 +169,7 @@ const Clients = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Select value={filterRegion || ""} onValueChange={setFilterRegion}>
+              <Select value={filterRegion} onValueChange={setFilterRegion}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Filtrer par région" />
                 </SelectTrigger>

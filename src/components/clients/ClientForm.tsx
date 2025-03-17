@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { agenciesService } from "@/services/agencies.service";
-import { useEffect, useState } from "react";
 
 interface ClientFormProps {
   client?: Client;
@@ -21,17 +19,12 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
     queryFn: agenciesService.getAll
   });
 
-  const [defaultAgencyId, setDefaultAgencyId] = useState<string>("1");
-
-  useEffect(() => {
-    if (client?.agency) {
-      if (typeof client.agency === 'object' && client.agency !== null) {
-        setDefaultAgencyId(client.agency.id?.toString() || "1");
-      } else {
-        setDefaultAgencyId(client.agency?.toString() || "1");
-      }
+  const getAgencyId = (agency: any): string => {
+    if (typeof agency === 'object' && agency !== null) {
+      return agency.id?.toString() || '';
     }
-  }, [client]);
+    return agency?.toString() || '';
+  };
 
   return (
     <form onSubmit={(e) => {
@@ -59,7 +52,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="name" 
               name="name"
-              defaultValue={client?.name || ""} 
+              defaultValue={client?.name} 
               required
             />
           </div>
@@ -69,7 +62,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
               id="email" 
               name="email"
               type="email" 
-              defaultValue={client?.email || ""} 
+              defaultValue={client?.email} 
               required
             />
           </div>
@@ -80,7 +73,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="phone" 
               name="phone"
-              defaultValue={client?.phone || ""} 
+              defaultValue={client?.phone} 
               required
             />
           </div>
@@ -89,7 +82,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
             <Input 
               id="clientId" 
               name="clientId"
-              defaultValue={client?.clientId || ""} 
+              defaultValue={client?.clientId} 
               disabled={!!client}
               required={!client}
             />
@@ -100,7 +93,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
           <Textarea 
             id="address" 
             name="address"
-            defaultValue={client?.address || ""} 
+            defaultValue={client?.address} 
             required
           />
         </div>
@@ -109,7 +102,7 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
           <Textarea 
             id="farmInfo" 
             name="farmInfo"
-            defaultValue={client?.farmInfo || ""}
+            defaultValue={client?.farmInfo}
             required
           />
         </div>
@@ -136,29 +129,22 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
                 <SelectItem value="Nord">Nord</SelectItem>
                 <SelectItem value="Sud">Sud</SelectItem>
                 <SelectItem value="Est">Est</SelectItem>
-                <SelectItem value="Ouest">Ouest</SelectItem>
-                <SelectItem value="Centre">Centre</SelectItem>
-                <SelectItem value="Non_specifie">Non spécifiée</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={defaultAgencyId}>
+          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)} required>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>
             <SelectContent>
-              {agencies && agencies.length > 0 ? (
-                agencies.map((agency) => (
-                  <SelectItem key={agency.id} value={agency.id.toString()}>
-                    {agency.name}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="1">Agence par défaut</SelectItem>
-              )}
+              {agencies.map((agency) => (
+                <SelectItem key={agency.id} value={agency.id.toString()}>
+                  {agency.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
