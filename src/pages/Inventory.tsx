@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,55 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Product } from "@/types/product";
-import { useToast } from "@/components/ui/use-toast";
-
-// Mock data for demonstration
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "Produit A",
-    sku: "SKU001",
-    category: "Catégorie 1",
-    price: 15000,
-    stockLevel: 150,
-    minimumStock: 50,
-    description: "Description détaillée du produit A",
-    status: "En stock",
-    lastDelivery: "2024-02-20",
-    supplier: "Fournisseur X",
-  },
-  {
-    id: "2",
-    name: "Produit B",
-    sku: "SKU002",
-    category: "Catégorie 2",
-    price: 25000,
-    stockLevel: 30,
-    minimumStock: 40,
-    description: "Description détaillée du produit B",
-    status: "Stock faible",
-    lastDelivery: "2024-02-19",
-    supplier: "Fournisseur Y",
-  },
-  {
-    id: "3",
-    name: "Produit C",
-    sku: "SKU003",
-    category: "Catégorie 1",
-    price: 35000,
-    stockLevel: 0,
-    minimumStock: 20,
-    description: "Description détaillée du produit C",
-    status: "Rupture de stock",
-    lastDelivery: "2024-02-18",
-    nextDelivery: "2024-03-01",
-    supplier: "Fournisseur Z",
-  },
-];
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { inventoryService } from "@/services/inventory.service";
 
 const Inventory = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -67,6 +26,80 @@ const Inventory = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  // Fetch products from API
+  const { data: products = [], isLoading, error } = useQuery({
+    queryKey: ['products'],
+    queryFn: inventoryService.getAll,
+  });
+
+  // Create product mutation
+  const createProductMutation = useMutation({
+    mutationFn: (productData: FormData) => {
+      const productObj = Object.fromEntries(productData.entries());
+      return inventoryService.create(productObj as Omit<Product, "id">);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsFormOpen(false);
+      toast({
+        title: "Produit créé",
+        description: "Le produit a été créé avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Erreur lors de la création du produit: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update product mutation
+  const updateProductMutation = useMutation({
+    mutationFn: ({ id, formData }: { id: string; formData: FormData }) => {
+      const productObj = Object.fromEntries(formData.entries());
+      return inventoryService.update(id, productObj as Partial<Product>);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsFormOpen(false);
+      setSelectedProduct(null);
+      toast({
+        title: "Produit modifié",
+        description: "Le produit a été modifié avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Erreur lors de la modification du produit: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete product mutation
+  const deleteProductMutation = useMutation({
+    mutationFn: (id: string) => inventoryService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsDeleteDialogOpen(false);
+      setProductToDelete(null);
+      toast({
+        title: "Produit supprimé",
+        description: "Le produit a été supprimé avec succès.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: `Erreur lors de la suppression du produit: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,78 +109,35 @@ const Inventory = () => {
   });
 
   const handleCreateProduct = (formData: FormData) => {
-    const newProduct: Product = {
-      id: (products.length + 1).toString(),
-      name: formData.get("name") as string,
-      sku: formData.get("sku") as string,
-      category: formData.get("category") as string,
-      price: Number(formData.get("price")),
-      stockLevel: Number(formData.get("stockLevel")),
-      minimumStock: Number(formData.get("minimumStock")),
-      description: formData.get("description") as string,
-      status: formData.get("status") as Product["status"],
-      lastDelivery: new Date().toISOString().split("T")[0],
-      supplier: formData.get("supplier") as string,
-    };
-
-    setProducts([...products, newProduct]);
-    setIsFormOpen(false);
-    toast({
-      title: "Produit créé",
-      description: "Le produit a été créé avec succès.",
-    });
+    createProductMutation.mutate(formData);
   };
 
   const handleUpdateProduct = (formData: FormData) => {
     if (!selectedProduct) return;
-
-    const updatedProducts = products.map((product) =>
-      product.id === selectedProduct.id
-        ? {
-            ...product,
-            name: formData.get("name") as string,
-            sku: formData.get("sku") as string,
-            category: formData.get("category") as string,
-            price: Number(formData.get("price")),
-            stockLevel: Number(formData.get("stockLevel")),
-            minimumStock: Number(formData.get("minimumStock")),
-            description: formData.get("description") as string,
-            status: formData.get("status") as Product["status"],
-            supplier: formData.get("supplier") as string,
-          }
-        : product
-    );
-
-    setProducts(updatedProducts);
-    setIsFormOpen(false);
-    setSelectedProduct(null);
-    toast({
-      title: "Produit modifié",
-      description: "Le produit a été modifié avec succès.",
-    });
+    updateProductMutation.mutate({ id: selectedProduct.id, formData });
   };
 
   const handleDeleteProduct = () => {
     if (!productToDelete) return;
-
-    const updatedProducts = products.filter(
-      (product) => product.id !== productToDelete.id
-    );
-    setProducts(updatedProducts);
-    setIsDeleteDialogOpen(false);
-    setProductToDelete(null);
-    toast({
-      title: "Produit supprimé",
-      description: "Le produit a été supprimé avec succès.",
-    });
+    deleteProductMutation.mutate(productToDelete.id);
   };
 
+  // Calculate statistics
   const stats = {
     total: products.length,
     lowStock: products.filter((p) => p.status === "Stock faible").length,
     outOfStock: products.filter((p) => p.status === "Rupture de stock").length,
     pendingDeliveries: products.filter((p) => p.nextDelivery).length,
   };
+
+  // Handle API errors
+  if (error) {
+    toast({
+      title: "Erreur de chargement",
+      description: "Impossible de charger les produits. Veuillez réessayer plus tard.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <DashboardLayout>
@@ -223,7 +213,7 @@ const Inventory = () => {
                     <SelectValue placeholder="Filtrer par statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="">Tous les statuts</SelectItem>
                     <SelectItem value="En stock">En stock</SelectItem>
                     <SelectItem value="Stock faible">Stock faible</SelectItem>
                     <SelectItem value="Rupture de stock">Rupture de stock</SelectItem>
@@ -233,21 +223,27 @@ const Inventory = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <ProductList
-              products={filteredProducts}
-              onView={(product) => {
-                setSelectedProduct(product);
-                setIsDetailsOpen(true);
-              }}
-              onEdit={(product) => {
-                setSelectedProduct(product);
-                setIsFormOpen(true);
-              }}
-              onDelete={(product) => {
-                setProductToDelete(product);
-                setIsDeleteDialogOpen(true);
-              }}
-            />
+            {isLoading ? (
+              <div className="flex justify-center p-4">
+                <p className="text-muted-foreground">Chargement des produits...</p>
+              </div>
+            ) : (
+              <ProductList
+                products={filteredProducts}
+                onView={(product) => {
+                  setSelectedProduct(product);
+                  setIsDetailsOpen(true);
+                }}
+                onEdit={(product) => {
+                  setSelectedProduct(product);
+                  setIsFormOpen(true);
+                }}
+                onDelete={(product) => {
+                  setProductToDelete(product);
+                  setIsDeleteDialogOpen(true);
+                }}
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -281,8 +277,11 @@ const Inventory = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteProduct}>
-                Supprimer
+              <AlertDialogAction 
+                onClick={handleDeleteProduct}
+                disabled={deleteProductMutation.isPending}
+              >
+                {deleteProductMutation.isPending ? "Suppression..." : "Supprimer"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

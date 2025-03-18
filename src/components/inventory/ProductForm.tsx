@@ -1,9 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Product } from "@/types/product";
+import { useState } from "react";
 
 interface ProductFormProps {
   product?: Product;
@@ -11,12 +13,23 @@ interface ProductFormProps {
 }
 
 export const ProductForm = ({ product, onSubmit }: ProductFormProps) => {
-  return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
       const formData = new FormData(e.currentTarget);
-      onSubmit(formData);
-    }}>
+      await onSubmit(formData);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -101,7 +114,6 @@ export const ProductForm = ({ product, onSubmit }: ProductFormProps) => {
             />
           </div>
           <div className="space-y-2">
-
             <Label htmlFor="status">Statut</Label>
             <Select name="status" defaultValue={product?.status || "En stock"}>
               <SelectTrigger>
@@ -113,13 +125,15 @@ export const ProductForm = ({ product, onSubmit }: ProductFormProps) => {
                 <SelectItem value="Rupture de stock">Rupture de stock</SelectItem>
               </SelectContent>
             </Select>
-
           </div>
         </div>
       </div>
       <div className="flex justify-end">
-        <Button type="submit">
-          {product ? "Enregistrer les modifications" : "Créer le produit"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting 
+            ? "Traitement en cours..." 
+            : (product ? "Enregistrer les modifications" : "Créer le produit")
+          }
         </Button>
       </div>
     </form>
