@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,12 @@ interface AgencyDetailsDialogProps {
 export const AgencyDetailsDialog = ({ agency, open, onOpenChange }: AgencyDetailsDialogProps) => {
   if (!agency) return null;
 
+  // Create safe revenue data with fallbacks for undefined values
   const revenueData = [
-    { name: 'Semaine', value: agency.revenue.weekly },
-    { name: 'Mois', value: agency.revenue.monthly },
-    { name: 'Trimestre', value: agency.revenue.quarterly },
-    { name: 'Année', value: agency.revenue.yearly },
+    { name: 'Semaine', value: agency.revenue?.weekly ?? 0 },
+    { name: 'Mois', value: agency.revenue?.monthly ?? 0 },
+    { name: 'Trimestre', value: agency.revenue?.quarterly ?? 0 },
+    { name: 'Année', value: agency.revenue?.yearly ?? 0 },
   ];
 
   return (
@@ -49,9 +51,9 @@ export const AgencyDetailsDialog = ({ agency, open, onOpenChange }: AgencyDetail
               </CardHeader>
               <CardContent>
                 <div className="space-y-1">
-                  <p><span className="font-medium">Total:</span> {agency.complaints.total}</p>
-                  <p><span className="font-medium">Résolues:</span> {agency.complaints.resolved}</p>
-                  <p><span className="font-medium">En attente:</span> {agency.complaints.pending}</p>
+                  <p><span className="font-medium">Total:</span> {agency.complaints?.total ?? 0}</p>
+                  <p><span className="font-medium">Résolues:</span> {agency.complaints?.resolved ?? 0}</p>
+                  <p><span className="font-medium">En attente:</span> {agency.complaints?.pending ?? 0}</p>
                 </div>
               </CardContent>
             </Card>
