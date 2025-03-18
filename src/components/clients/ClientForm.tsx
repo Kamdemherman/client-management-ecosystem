@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,45 +7,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Client } from "@/types/client";
 import { useQuery } from "@tanstack/react-query";
 import { agenciesService } from "@/services/agencies.service";
+import { useState, useEffect } from "react";
 
 interface ClientFormProps {
   client?: Client;
   onSubmit: (formData: FormData) => void;
+  isSubmitting?: boolean;
 }
 
-export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
+export const ClientForm = ({ client, onSubmit, isSubmitting = false }: ClientFormProps) => {
+  const [selectedAgency, setSelectedAgency] = useState<string>("");
+  
   // Fetch agencies for the dropdown
-  const { data: agencies = [] } = useQuery({
+  const { data: agencies = [], isLoading } = useQuery({
     queryKey: ['agencies'],
     queryFn: agenciesService.getAll
   });
 
-  const getAgencyId = (agency: any): string => {
-    if (typeof agency === 'object' && agency !== null) {
-      return agency.id?.toString() || '';
+  useEffect(() => {
+    if (client?.agency) {
+      if (typeof client.agency === 'object' && client.agency !== null) {
+        setSelectedAgency(client.agency.id?.toString() || '');
+      } else {
+        setSelectedAgency(client.agency?.toString() || '');
+      }
     }
-    return agency?.toString() || '';
+  }, [client]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    // Ensure the field name is farm_info (not farmInfo)
+    const farmInfo = formData.get('farmInfo');
+    if (farmInfo) {
+      formData.delete('farmInfo');
+      formData.append('farm_info', farmInfo.toString());
+    }
+    
+    // If we're updating a client, add the ID to the form data
+    if (client?.id) {
+      formData.append('id', client.id.toString());
+    }
+    
+    onSubmit(formData);
   };
 
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      
-      // Ensure the field name is farm_info (not farmInfo)
-      const farmInfo = formData.get('farmInfo');
-      if (farmInfo) {
-        formData.delete('farmInfo');
-        formData.append('farm_info', farmInfo.toString());
-      }
-      
-      // If we're updating a client, add the ID to the form data
-      if (client?.id) {
-        formData.append('id', client.id.toString());
-      }
-      
-      onSubmit(formData);
-    }}>
+    <form onSubmit={handleSubmit}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -129,22 +139,32 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
                 <SelectItem value="Nord">Nord</SelectItem>
                 <SelectItem value="Sud">Sud</SelectItem>
                 <SelectItem value="Est">Est</SelectItem>
+                <SelectItem value="Autre">Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="agency_id">Agence</Label>
-          <Select name="agency_id" defaultValue={getAgencyId(client?.agency)} required>
+          <Select 
+            name="agency_id" 
+            value={selectedAgency} 
+            onValueChange={setSelectedAgency} 
+            required
+          >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner une agence" />
             </SelectTrigger>
             <SelectContent>
-              {agencies.map((agency) => (
-                <SelectItem key={agency.id} value={agency.id.toString()}>
-                  {agency.name}
-                </SelectItem>
-              ))}
+              {isLoading ? (
+                <SelectItem value="loading">Chargement...</SelectItem>
+              ) : (
+                agencies.map((agency) => (
+                  <SelectItem key={agency.id} value={agency.id.toString()}>
+                    {agency.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -162,8 +182,11 @@ export const ClientForm = ({ client, onSubmit }: ClientFormProps) => {
         </div>
       </div>
       <div className="flex justify-end">
-        <Button type="submit">
-          {client ? "Enregistrer les modifications" : "Créer le client"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting 
+            ? "Traitement en cours..." 
+            : (client ? "Enregistrer les modifications" : "Créer le client")
+          }
         </Button>
       </div>
     </form>

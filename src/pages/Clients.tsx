@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Search, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,33 +26,43 @@ const Clients = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: clients = [], isLoading } = useQuery({
+  // Fetch all clients
+  const { 
+    data: clients = [], 
+    isLoading,
+    isError,
+    error 
+  } = useQuery({
     queryKey: ['clients'],
     queryFn: clientsService.getAll
   });
 
+  // Create client mutation
   const createMutation = useMutation({
     mutationFn: (formData: FormData) => clientsService.create(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      setIsCreateDialogOpen(false);
       toast({
         title: "Client créé",
         description: "Le nouveau client a été créé avec succès.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error creating client:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la création du client.",
+        description: error.response?.data?.message || "Une erreur est survenue lors de la création du client.",
         variant: "destructive",
       });
     }
   });
 
+  // Update client mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, formData }: { id: number; formData: FormData }) => 
       clientsService.update(id, formData),
@@ -64,16 +74,17 @@ const Clients = () => {
         description: "Les informations du client ont été mises à jour avec succès.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error updating client:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du client.",
+        description: error.response?.data?.message || "Une erreur est survenue lors de la mise à jour du client.",
         variant: "destructive",
       });
     }
   });
 
+  // Delete client mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => clientsService.delete(id),
     onSuccess: () => {
@@ -84,16 +95,17 @@ const Clients = () => {
         description: "Le client a été supprimé avec succès.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error deleting client:", error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la suppression du client.",
+        description: error.response?.data?.message || "Une erreur est survenue lors de la suppression du client.",
         variant: "destructive",
       });
     }
   });
 
+  // Form submission handlers
   const handleCreateClient = (formData: FormData) => {
     createMutation.mutate(formData);
   };
@@ -110,21 +122,43 @@ const Clients = () => {
     }
   };
 
+  // Filter clients based on search term and region
   const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     client.phone?.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (filterRegion === "" || client.region === filterRegion)
   );
 
+  // Pagination
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
   const paginatedClients = filteredClients.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Get unique regions for filter dropdown
   const regions = Array.from(new Set(clients.map(client => client.region))).filter(Boolean);
 
-  if (isLoading) {
-    return <div>Chargement...</div>;
+  // Show error state
+  if (isError) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 bg-red-50 border border-red-200 rounded-md">
+          <h3 className="text-lg font-semibold text-red-800">Erreur de chargement</h3>
+          <p className="text-red-600">
+            {error instanceof Error ? error.message : "Une erreur est survenue lors du chargement des clients."}
+          </p>
+          <Button 
+            className="mt-4" 
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['clients'] })}
+          >
+            Réessayer
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -135,7 +169,7 @@ const Clients = () => {
             <h1 className="text-3xl font-bold text-gray-900">Gestion des Clients</h1>
             <p className="mt-2 text-gray-600">Gérez vos comptes clients et leurs informations</p>
           </div>
-          <Dialog>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <UserPlus className="w-4 h-4" />
@@ -149,7 +183,10 @@ const Clients = () => {
                   Remplissez les informations du client ci-dessous
                 </DialogDescription>
               </DialogHeader>
-              <ClientForm onSubmit={handleCreateClient} />
+              <ClientForm 
+                onSubmit={handleCreateClient} 
+                isSubmitting={createMutation.isPending}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -166,17 +203,26 @@ const Clients = () => {
                   placeholder="Rechercher un client..."
                   className="pl-8"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                  }}
                 />
               </div>
-              <Select value={filterRegion} onValueChange={setFilterRegion}>
+              <Select 
+                value={filterRegion} 
+                onValueChange={(value) => {
+                  setFilterRegion(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
+              >
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Filtrer par région" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Toutes les régions</SelectItem>
                   {regions.map((region) => (
-                    <SelectItem key={region} value={region}>{region}</SelectItem>
+                    region && <SelectItem key={region} value={region}>{region}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -188,33 +234,37 @@ const Clients = () => {
               onView={setSelectedClient}
               onEdit={setEditingClient}
               onDelete={setClientToDelete}
+              isLoading={isLoading}
             />
 
-            <div className="flex items-center justify-between space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-              >
-                Précédent
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {currentPage} sur {totalPages || 1}
+            {filteredClients.length > 0 && (
+              <div className="flex items-center justify-between space-x-2 py-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  Page {currentPage} sur {totalPages || 1}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  Suivant
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Suivant
-              </Button>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
+      {/* Edit client dialog */}
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -227,17 +277,20 @@ const Clients = () => {
             <ClientForm 
               client={editingClient} 
               onSubmit={handleUpdateClient}
+              isSubmitting={updateMutation.isPending}
             />
           )}
         </DialogContent>
       </Dialog>
 
+      {/* Client details dialog */}
       <ClientDetailsDialog 
         client={selectedClient}
         open={!!selectedClient}
         onOpenChange={(open) => !open && setSelectedClient(null)}
       />
 
+      {/* Delete confirmation dialog */}
       <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -252,8 +305,9 @@ const Clients = () => {
             <AlertDialogAction 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
             >
-              Supprimer
+              {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

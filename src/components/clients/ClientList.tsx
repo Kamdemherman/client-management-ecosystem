@@ -11,9 +11,40 @@ interface ClientListProps {
   onView: (client: Client) => void;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  isLoading?: boolean;
 }
 
-export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProps) => {
+export const ClientList = ({ clients, onView, onEdit, onDelete, isLoading = false }: ClientListProps) => {
+  const getInitials = (name: string) => {
+    if (!name) return "??";
+    const parts = name.split(" ").filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const formatAgency = (agency: any): string => {
+    if (!agency) return "Non spécifié";
+    if (typeof agency === "object" && agency !== null) {
+      return agency.name || String(agency) || "Non spécifié";
+    }
+    return String(agency) || "Non spécifié";
+  };
+  
+  const formatCurrency = (value: string | number): string => {
+    if (!value) return "0 F";
+    const numValue = typeof value === "string" ? parseInt(value, 10) : value;
+    return isNaN(numValue) ? "0 F" : `${numValue.toLocaleString()} F`;
+  };
+
+  if (isLoading) {
+    return <div className="py-10 text-center">Chargement des clients...</div>;
+  }
+
+  if (!clients || clients.length === 0) {
+    return <div className="py-10 text-center">Aucun client trouvé</div>;
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -35,21 +66,21 @@ export const ClientList = ({ clients, onView, onEdit, onDelete }: ClientListProp
             <TableCell className="flex items-center gap-2">
               <Avatar>
                 <AvatarImage src={client.avatar} />
-                <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
               </Avatar>
-              {client.name}
+              {client.name || "Client sans nom"}
             </TableCell>
-            <TableCell>{client.phone}</TableCell>
+            <TableCell>{client.phone || "Non spécifié"}</TableCell>
             <TableCell className="max-w-[200px] truncate" title={client.address}>
-              {client.address}
+              {client.address || "Non spécifié"}
             </TableCell>
-            <TableCell>{client.region}</TableCell>
-            <TableCell>{typeof client.agency === 'object' ? client.agency.name || String(client.agency) : client.agency}</TableCell>
-            <TableCell>{parseInt(client.volume).toLocaleString()} F</TableCell>
-            <TableCell>{client.pendingOrders}</TableCell>
+            <TableCell>{client.region || "Non spécifié"}</TableCell>
+            <TableCell>{formatAgency(client.agency)}</TableCell>
+            <TableCell>{formatCurrency(client.volume)}</TableCell>
+            <TableCell>{client.pendingOrders || 0}</TableCell>
             <TableCell>
               <Badge variant={client.status === "Actif" ? "default" : "secondary"}>
-                {client.status}
+                {client.status || "Indéfini"}
               </Badge>
             </TableCell>
             <TableCell>

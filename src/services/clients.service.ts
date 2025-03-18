@@ -8,7 +8,7 @@ export const clientsService = {
     return response.data;
   },
 
-  getById: async (id: number): Promise<Client> => {
+  getById: async (id: number | string): Promise<Client> => {
     const response = await api.get(`/clients/${id}`);
     return response.data;
   },
@@ -16,12 +16,7 @@ export const clientsService = {
   create: async (formData: FormData): Promise<Client> => {
     console.log('Creating client with form data:', Object.fromEntries(formData.entries()));
     
-    // Ensure no ID is included when creating a new client
-    if (formData.has('id')) {
-      formData.delete('id');
-    }
-    
-    // Send the FormData directly
+    // Ensure proper formatting before sending
     const response = await api.post('/clients', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -32,21 +27,10 @@ export const clientsService = {
     return response.data;
   },
 
-  update: async (id: number, formData: FormData): Promise<Client> => {
+  update: async (id: number | string, formData: FormData): Promise<Client> => {
     console.log('Updating client with form data:', Object.fromEntries(formData.entries()));
     
-    // Ensure the correct ID is set for updating
-    if (formData.has('id')) {
-      // Make sure the ID matches the path parameter
-      const formId = formData.get('id');
-      if (formId !== id.toString()) {
-        formData.set('id', id.toString());
-      }
-    } else {
-      // Add the ID if it's not in the form data
-      formData.append('id', id.toString());
-    }
-    
+    // Use the correct method for updating (PUT or PATCH depending on your API)
     const response = await api.put(`/clients/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -57,7 +41,7 @@ export const clientsService = {
     return response.data;
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: number | string): Promise<void> => {
     await api.delete(`/clients/${id}`);
   },
 
