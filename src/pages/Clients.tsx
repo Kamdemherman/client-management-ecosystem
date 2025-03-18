@@ -21,7 +21,7 @@ const ITEMS_PER_PAGE = 5;
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRegion, setFilterRegion] = useState("");
+  const [filterRegion, setFilterRegion] = useState("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
@@ -127,7 +127,7 @@ const Clients = () => {
     (client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
      client.phone?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (filterRegion === "" || client.region === filterRegion)
+    (filterRegion === "all" || client.region === filterRegion)
   );
 
   // Pagination
@@ -220,7 +220,7 @@ const Clients = () => {
                   <SelectValue placeholder="Filtrer par région" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les régions</SelectItem>
+                  <SelectItem value="all">Toutes les régions</SelectItem>
                   {regions.map((region) => (
                     region && <SelectItem key={region} value={region}>{region}</SelectItem>
                   ))}

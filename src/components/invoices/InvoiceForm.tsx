@@ -49,7 +49,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   const handleAddProduct = () => {
     setSelectedProducts([
       ...selectedProducts,
-      { id: "", name: "", quantity: 1, price: 0 }
+      { id: "temp-" + Date.now(), name: "", quantity: 1, price: 0 }
     ]);
   };
 
@@ -117,16 +117,20 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="client">Client</Label>
-          <Select name="client" defaultValue={invoice?.client}>
+          <Select name="client" defaultValue={invoice?.client || "default-client"}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
             <SelectContent>
-              {clients.map(client => (
-                <SelectItem key={client.id} value={client.id.toString()}>
-                  {client.name}
-                </SelectItem>
-              ))}
+              {clients.length === 0 ? (
+                <SelectItem value="default-client">Aucun client disponible</SelectItem>
+              ) : (
+                clients.map(client => (
+                  <SelectItem key={client.id} value={client.id.toString()}>
+                    {client.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -152,11 +156,15 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
                       <SelectValue placeholder="Sélectionner un produit" />
                     </SelectTrigger>
                     <SelectContent>
-                      {products.map(p => (
-                        <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.name} - {p.price}€
-                        </SelectItem>
-                      ))}
+                      {products.length === 0 ? (
+                        <SelectItem value="default-product">Aucun produit disponible</SelectItem>
+                      ) : (
+                        products.map(p => (
+                          <SelectItem key={p.id} value={p.id.toString()}>
+                            {p.name} - {p.price}€
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -166,7 +174,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
                     type="number"
                     min="1"
                     value={product.quantity}
-                    onChange={(e) => handleProductChange(index, "quantity", parseInt(e.target.value))}
+                    onChange={(e) => handleProductChange(index, "quantity", parseInt(e.target.value) || 1)}
                   />
                 </div>
               </div>

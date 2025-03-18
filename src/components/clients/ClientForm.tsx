@@ -27,9 +27,9 @@ export const ClientForm = ({ client, onSubmit, isSubmitting = false }: ClientFor
   useEffect(() => {
     if (client?.agency) {
       if (typeof client.agency === 'object' && client.agency !== null) {
-        setSelectedAgency(client.agency.id?.toString() || '');
+        setSelectedAgency(client.agency.id?.toString() || '1'); // Default to '1' if id is empty
       } else {
-        setSelectedAgency(client.agency?.toString() || '');
+        setSelectedAgency(client.agency?.toString() || '1'); // Default to '1' if agency is empty
       }
     }
   }, [client]);
@@ -139,7 +139,8 @@ export const ClientForm = ({ client, onSubmit, isSubmitting = false }: ClientFor
                 <SelectItem value="Nord">Nord</SelectItem>
                 <SelectItem value="Sud">Sud</SelectItem>
                 <SelectItem value="Est">Est</SelectItem>
-                <SelectItem value="Autre">Autre</SelectItem>
+                <SelectItem value="Ouest">Ouest</SelectItem>
+                <SelectItem value="Centre">Centre</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -148,7 +149,7 @@ export const ClientForm = ({ client, onSubmit, isSubmitting = false }: ClientFor
           <Label htmlFor="agency_id">Agence</Label>
           <Select 
             name="agency_id" 
-            value={selectedAgency} 
+            value={selectedAgency || "1"} 
             onValueChange={setSelectedAgency} 
             required
           >
@@ -160,7 +161,7 @@ export const ClientForm = ({ client, onSubmit, isSubmitting = false }: ClientFor
                 <SelectItem value="loading">Chargement...</SelectItem>
               ) : (
                 agencies.map((agency) => (
-                  <SelectItem key={agency.id} value={agency.id.toString()}>
+                  <SelectItem key={agency.id} value={agency.id.toString() || "1"}>
                     {agency.name}
                   </SelectItem>
                 ))
