@@ -11,7 +11,6 @@ import { ordersService } from "@/services/orders.service";
 import { paymentService } from "@/services/api/payment.service";
 import { complaintService } from "@/services/api/complaint.service";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 interface ClientDetailsDialogProps {
   client: Client | null;
@@ -20,24 +19,24 @@ interface ClientDetailsDialogProps {
 }
 
 export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetailsDialogProps) => {
-  if (!client) return null;
+  const clientId = client?.id?.toString();
 
   const { data: orders = [] } = useQuery({
-    queryKey: ['orders', client.id.toString()],
-    queryFn: () => ordersService.getByClient(client.id.toString()),
-    enabled: open
+    queryKey: ['orders', clientId],
+    queryFn: () => clientId ? ordersService.getByClient(clientId) : Promise.resolve([]),
+    enabled: !!clientId && open
   });
 
   const { data: payments = [] } = useQuery({
-    queryKey: ['payments', client.id.toString()],
-    queryFn: () => paymentService.getByClient(client.id.toString()),
-    enabled: open
+    queryKey: ['payments', clientId],
+    queryFn: () => clientId ? paymentService.getByClient(clientId) : Promise.resolve([]),
+    enabled: !!clientId && open
   });
 
   const { data: complaints = [] } = useQuery({
-    queryKey: ['complaints', client.id.toString()],
-    queryFn: () => complaintService.getByClient(client.id.toString()),
-    enabled: open
+    queryKey: ['complaints', clientId],
+    queryFn: () => clientId ? complaintService.getByClient(clientId) : Promise.resolve([]),
+    enabled: !!clientId && open
   });
 
   const formatAgency = (agency: any) => {
@@ -46,6 +45,8 @@ export const ClientDetailsDialog = ({ client, open, onOpenChange }: ClientDetail
     }
     return String(agency);
   };
+
+  if (!client) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
