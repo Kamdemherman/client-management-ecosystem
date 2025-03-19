@@ -15,13 +15,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { reservationsService } from "@/services/reservations.service";
 import { clientsService } from "@/services/clients.service";
 import { inventoryService } from "@/services/inventory.service";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const MAX_RESERVATIONS_PER_DAY = 5;
 
 export const ReservationCalendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [clientName, setClientName] = useState("");
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -54,7 +55,8 @@ export const ReservationCalendar = () => {
         description: "La réservation a été créée avec succès"
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error creating reservation:", error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la création de la réservation",
@@ -64,6 +66,7 @@ export const ReservationCalendar = () => {
   });
 
   const getReservationsForDate = (date: Date) => {
+    if (!date) return [];
     return reservations.filter(res => 
       format(new Date(res.reservationDate), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
@@ -120,22 +123,37 @@ export const ReservationCalendar = () => {
       return;
     }
 
+    // Safely convert client.id and product.id to string
+    const clientId = client.id ? client.id.toString() : "";
+    const productId = product.id ? product.id.toString() : "";
+    const agencyId = client.agency ? client.agency.toString() : "";
+    
+    // Check if we have all required data
+    if (!clientId || !productId) {
+      toast({
+        title: "Erreur",
+        description: "Données de client ou produit incomplètes",
+        variant: "destructive"
+      });
+      return;
+    }
+
     createReservation.mutate({
-      clientId: client.id.toString(),
+      clientId,
       clientName: client.name,
-      productId: product.id.toString(),
+      productId,
       productName: product.name,
       quantity: parseInt(quantity),
       status: "En attente",
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       deliveryDate: format(addDays(selectedDate, 1), 'yyyy-MM-dd'),
-      agencyId: client.agency,
-      agencyName: client.agency
+      agencyId,
+      agencyName: client.agencyName || agencyId
     });
   };
 
   const resetForm = () => {
-    setSelectedDate(undefined);
+    setSelectedDate(new Date());
     setClientName("");
     setProductName("");
     setQuantity("");
@@ -172,16 +190,26 @@ export const ReservationCalendar = () => {
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date</label>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    onClick={() => setSelectedDate(date || new Date())}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : "Sélectionner une date"}
-                  </Button>
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : "Sélectionner une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      locale={fr}
+                      className="rounded-md border pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Client</label>
@@ -240,7 +268,7 @@ export const ReservationCalendar = () => {
                 setSelectedDate(newDate);
               }}
               locale={fr}
-              className="rounded-md border"
+              className="rounded-md border pointer-events-auto"
             />
           </div>
           <div className="space-y-4">
@@ -262,7 +290,7 @@ export const ReservationCalendar = () => {
                   </div>
                   <div className="text-sm text-gray-600">
                     <p>{reservation.productName} - {reservation.quantity} unités</p>
-                    <p>{format(new Date(reservation.reservationDate), 'HH:mm')}</p>
+                    <p>{format(new Date(reservation.reservationDate), 'dd/MM/yyyy')}</p>
                   </div>
                 </div>
               ))}
