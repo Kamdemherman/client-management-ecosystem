@@ -16,6 +16,8 @@ import { reservationsService } from "@/services/reservations.service";
 import { clientsService } from "@/services/clients.service";
 import { inventoryService } from "@/services/inventory.service";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Client } from "@/types/client";
+import { Product } from "@/types/product";
 
 const MAX_RESERVATIONS_PER_DAY = 5;
 
@@ -111,10 +113,12 @@ export const ReservationCalendar = () => {
       return;
     }
 
+    // Trouver le client et le produit de manière plus sécurisée
     const client = clients.find(c => c.name === clientName);
     const product = products.find(p => p.name === productName);
 
     if (!client || !product) {
+      console.error("Client ou produit non trouvé:", { clientName, productName, clients, products });
       toast({
         title: "Erreur",
         description: "Client ou produit invalide",
@@ -123,23 +127,38 @@ export const ReservationCalendar = () => {
       return;
     }
 
-    // Safely convert client.id and product.id to string
+    console.log("Client trouvé:", client);
+    console.log("Produit trouvé:", product);
+
+    // Convertir et vérifier les IDs de manière sécurisée
     const clientId = client.id ? client.id.toString() : "";
     const productId = product.id ? product.id.toString() : "";
-    const agencyId = client.agency ? (typeof client.agency === 'object' && client.agency !== null && 'id' in client.agency ? client.agency.id?.toString() : client.agency?.toString()) : "";
     
-    // Get agency name from client.agency if it's an object with a name property
+    // Gestion améliorée de l'agence
+    let agencyId = "";
     let agencyName = "";
+    
     if (client.agency) {
-      if (typeof client.agency === 'object' && client.agency !== null && 'name' in client.agency) {
-        agencyName = client.agency.name || agencyId;
+      if (typeof client.agency === 'object' && client.agency !== null) {
+        // Si l'agence est un objet
+        if ('id' in client.agency && client.agency.id) {
+          agencyId = client.agency.id.toString();
+        }
+        if ('name' in client.agency && client.agency.name) {
+          agencyName = client.agency.name.toString();
+        } else {
+          agencyName = agencyId;
+        }
       } else {
+        // Si l'agence est une chaîne de caractères ou autre chose
+        agencyId = String(client.agency);
         agencyName = agencyId;
       }
     }
     
-    // Check if we have all required data
+    // Vérification finale des données requises
     if (!clientId || !productId) {
+      console.error("Données manquantes:", { clientId, productId });
       toast({
         title: "Erreur",
         description: "Données de client ou produit incomplètes",
@@ -147,6 +166,11 @@ export const ReservationCalendar = () => {
       });
       return;
     }
+
+    console.log("Création de réservation avec:", { 
+      clientId, clientName, productId, productName, 
+      quantity: parseInt(quantity), agencyId, agencyName 
+    });
 
     createReservation.mutate({
       clientId,
@@ -228,8 +252,8 @@ export const ReservationCalendar = () => {
                     <SelectValue placeholder="Sélectionner un client" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.name}>
+                    {clients.map((client: Client) => (
+                      <SelectItem key={`client-${client.id}`} value={client.name}>
                         {client.name}
                       </SelectItem>
                     ))}
@@ -243,8 +267,8 @@ export const ReservationCalendar = () => {
                     <SelectValue placeholder="Sélectionner un produit" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.name}>
+                    {products.map((product: Product) => (
+                      <SelectItem key={`product-${product.id}`} value={product.name}>
                         {product.name}
                       </SelectItem>
                     ))}
@@ -289,7 +313,7 @@ export const ReservationCalendar = () => {
             <div className="space-y-2">
               {date && getReservationsForDate(date).map(reservation => (
                 <div
-                  key={reservation.id}
+                  key={`reservation-${reservation.id}`}
                   className="p-3 border rounded-lg space-y-2"
                 >
                   <div className="flex items-center justify-between">
