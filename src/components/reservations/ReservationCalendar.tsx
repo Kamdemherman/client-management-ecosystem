@@ -172,16 +172,17 @@ export const ReservationCalendar = () => {
       quantity: parseInt(quantity), agencyId, agencyName 
     });
 
+    // Format the data according to what the API expects
     createReservation.mutate({
-      clientId,
+      client_id: clientId,            // Changed from clientId
       clientName: client.name,
-      productId,
+      product_id: productId,          // Changed from productId
       productName: product.name,
       quantity: parseInt(quantity),
       status: "En attente",
-      reservationDate: format(selectedDate, 'yyyy-MM-dd'),
+      reservation_date: format(selectedDate, 'yyyy-MM-dd'),  // Changed from reservationDate
       deliveryDate: format(addDays(selectedDate, 1), 'yyyy-MM-dd'),
-      agencyId,
+      agency_id: agencyId,           // Changed from agencyId
       agencyName
     });
   };

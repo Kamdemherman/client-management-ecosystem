@@ -1,15 +1,16 @@
+
 export interface Reservation {
   id: string;
-  clientId: string;
+  client_id: string;      // Changed from clientId
   clientName: string;
-  productId: string;
+  product_id: string;     // Changed from productId
   productName: string;
   quantity: number;
   status: "En attente" | "Confirmée" | "Annulée";
-  reservationDate: string;
+  reservation_date: string;  // Changed from reservationDate
   deliveryDate: string;
   notes?: string;
-  agencyId: string;
+  agency_id: string;      // Changed from agencyId
   agencyName: string;
   createdAt: string;
   updatedAt: string;

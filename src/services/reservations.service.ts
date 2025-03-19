@@ -2,6 +2,21 @@
 import { Reservation } from "@/types/reservation";
 import { api } from "./api-config";
 
+// Define the request payload type to match what the API expects
+type ReservationRequest = {
+  client_id: string;
+  clientName: string;
+  product_id: string;
+  productName: string;
+  quantity: number;
+  status: string;
+  reservation_date: string;
+  deliveryDate: string;
+  agency_id: string;
+  agencyName: string;
+  notes?: string;
+};
+
 export const reservationsService = {
   getAll: async (): Promise<Reservation[]> => {
     const response = await api.get<Reservation[]>("/reservations");
@@ -13,7 +28,7 @@ export const reservationsService = {
     return response.data;
   },
 
-  create: async (reservation: Omit<Reservation, "id" | "createdAt" | "updatedAt">): Promise<Reservation> => {
+  create: async (reservation: ReservationRequest): Promise<Reservation> => {
     const response = await api.post<Reservation>("/reservations", reservation);
     return response.data;
   },
