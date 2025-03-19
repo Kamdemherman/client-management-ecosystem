@@ -126,7 +126,17 @@ export const ReservationCalendar = () => {
     // Safely convert client.id and product.id to string
     const clientId = client.id ? client.id.toString() : "";
     const productId = product.id ? product.id.toString() : "";
-    const agencyId = client.agency ? client.agency.toString() : "";
+    const agencyId = client.agency ? (typeof client.agency === 'object' && client.agency !== null && 'id' in client.agency ? client.agency.id?.toString() : client.agency?.toString()) : "";
+    
+    // Get agency name from client.agency if it's an object with a name property
+    let agencyName = "";
+    if (client.agency) {
+      if (typeof client.agency === 'object' && client.agency !== null && 'name' in client.agency) {
+        agencyName = client.agency.name || agencyId;
+      } else {
+        agencyName = agencyId;
+      }
+    }
     
     // Check if we have all required data
     if (!clientId || !productId) {
@@ -148,7 +158,7 @@ export const ReservationCalendar = () => {
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       deliveryDate: format(addDays(selectedDate, 1), 'yyyy-MM-dd'),
       agencyId,
-      agencyName: client.agencyName || agencyId
+      agencyName
     });
   };
 
