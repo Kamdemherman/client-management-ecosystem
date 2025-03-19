@@ -19,7 +19,7 @@ const Inventory = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -120,7 +120,7 @@ const Inventory = () => {
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || product.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === "all" || product.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -227,7 +227,7 @@ const Inventory = () => {
                     <SelectValue placeholder="Filtrer par statut" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les statuts</SelectItem>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
                     <SelectItem value="En stock">En stock</SelectItem>
                     <SelectItem value="Stock faible">Stock faible</SelectItem>
                     <SelectItem value="Rupture de stock">Rupture de stock</SelectItem>
