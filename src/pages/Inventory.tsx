@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,17 +26,26 @@ const Inventory = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
-  // Fetch products from API
   const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['products'],
     queryFn: inventoryService.getAll,
   });
 
-  // Create product mutation
   const createProductMutation = useMutation({
-    mutationFn: (productData: FormData) => {
-      const productObj = Object.fromEntries(productData.entries());
-      return inventoryService.create(productObj as Omit<Product, "id">);
+    mutationFn: (formData: FormData) => {
+      const product: Omit<Product, "id"> = {
+        name: formData.get("name") as string,
+        sku: formData.get("sku") as string,
+        category: formData.get("category") as string,
+        price: Number(formData.get("price")),
+        stockLevel: Number(formData.get("stockLevel")),
+        minimumStock: Number(formData.get("minimumStock")),
+        description: formData.get("description") as string,
+        status: formData.get("status") as "En stock" | "Stock faible" | "Rupture de stock",
+        lastDelivery: new Date().toISOString().split('T')[0],
+        supplier: formData.get("supplier") as string,
+      };
+      return inventoryService.create(product);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -56,11 +64,20 @@ const Inventory = () => {
     },
   });
 
-  // Update product mutation
   const updateProductMutation = useMutation({
     mutationFn: ({ id, formData }: { id: string; formData: FormData }) => {
-      const productObj = Object.fromEntries(formData.entries());
-      return inventoryService.update(id, productObj as Partial<Product>);
+      const product: Partial<Product> = {
+        name: formData.get("name") as string,
+        sku: formData.get("sku") as string,
+        category: formData.get("category") as string,
+        price: Number(formData.get("price")),
+        stockLevel: Number(formData.get("stockLevel")),
+        minimumStock: Number(formData.get("minimumStock")),
+        description: formData.get("description") as string,
+        status: formData.get("status") as "En stock" | "Stock faible" | "Rupture de stock",
+        supplier: formData.get("supplier") as string,
+      };
+      return inventoryService.update(id, product);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -80,7 +97,6 @@ const Inventory = () => {
     },
   });
 
-  // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: (id: string) => inventoryService.delete(id),
     onSuccess: () => {
@@ -122,7 +138,6 @@ const Inventory = () => {
     deleteProductMutation.mutate(productToDelete.id);
   };
 
-  // Calculate statistics
   const stats = {
     total: products.length,
     lowStock: products.filter((p) => p.status === "Stock faible").length,
@@ -130,7 +145,6 @@ const Inventory = () => {
     pendingDeliveries: products.filter((p) => p.nextDelivery).length,
   };
 
-  // Handle API errors
   if (error) {
     toast({
       title: "Erreur de chargement",
