@@ -70,7 +70,7 @@ export const ReservationCalendar = () => {
   const getReservationsForDate = (date: Date) => {
     if (!date) return [];
     return reservations.filter(res => 
-      format(new Date(res.reservationDate), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      format(new Date(res.reservation_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
   };
 
@@ -325,7 +325,7 @@ export const ReservationCalendar = () => {
                   </div>
                   <div className="text-sm text-gray-600">
                     <p>{reservation.productName} - {reservation.quantity} unités</p>
-                    <p>{format(new Date(reservation.reservationDate), 'dd/MM/yyyy')}</p>
+                    <p>{format(new Date(reservation.reservation_date), 'dd/MM/yyyy')}</p>
                   </div>
                 </div>
               ))}
