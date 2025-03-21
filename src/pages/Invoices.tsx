@@ -25,10 +25,17 @@ const Invoices = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: invoices = [], isLoading } = useQuery({
+  // Ensure invoices is always an array, even if the API returns something else
+  const { data, isLoading, error } = useQuery({
     queryKey: ['invoices'],
     queryFn: invoiceService.getAll,
   });
+  
+  // Make sure invoices is always an array before using map()
+  const invoices = Array.isArray(data) ? data : [];
+
+  // Log for debugging
+  console.log("Invoices data:", data);
 
   const createMutation = useMutation({
     mutationFn: invoiceService.create,
@@ -134,6 +141,17 @@ const Invoices = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-full">
+          <h3 className="text-xl font-bold text-red-500">Erreur lors du chargement des factures</h3>
+          <p className="text-gray-600">Veuillez réessayer plus tard</p>
         </div>
       </DashboardLayout>
     );
