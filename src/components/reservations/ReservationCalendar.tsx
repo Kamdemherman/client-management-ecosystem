@@ -312,23 +312,33 @@ export const ReservationCalendar = () => {
               ({date && getReservationsForDate(date).length}/{MAX_RESERVATIONS_PER_DAY})
             </h3>
             <div className="space-y-2">
-              {date && getReservationsForDate(date).map(reservation => (
-                <div
-                  key={`reservation-${reservation.id}`}
-                  className="p-3 border rounded-lg space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{reservation.clientName}</span>
-                    <Badge variant="outline" className={getStatusColor(reservation.status)}>
-                      {reservation.status}
-                    </Badge>
+              {date && getReservationsForDate(date).length === 0 ? (
+                <p className="text-sm text-gray-500">Aucune réservation pour cette date</p>
+              ) : (
+                date && getReservationsForDate(date).map(reservation => (
+                  <div
+                    key={`reservation-${reservation.id}`}
+                    className="p-3 border rounded-lg space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className={getStatusColor(reservation.status)}>
+                        {reservation.status}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {format(new Date(reservation.reservation_date), 'dd/MM/yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">{reservation.clientName}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Package className="h-4 w-4 text-gray-500" />
+                      <span>{reservation.productName} - {reservation.quantity} unités</span>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <p>{reservation.productName} - {reservation.quantity} unités</p>
-                    <p>{format(new Date(reservation.reservation_date), 'dd/MM/yyyy')}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
