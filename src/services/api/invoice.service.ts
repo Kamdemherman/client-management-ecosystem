@@ -14,12 +14,46 @@ export const invoiceService = {
   },
 
   create: async (data: FormData) => {
-    const response = await api.post<Invoice>("/invoices", Object.fromEntries(data));
+    // Convert FormData to a proper object
+    const formObject = Object.fromEntries(data);
+    
+    // Ensure products is properly formatted as JSON
+    if (typeof formObject.products === 'string') {
+      try {
+        JSON.parse(formObject.products); // Validate JSON format
+      } catch (error) {
+        console.error("Invalid products JSON format:", error);
+        formObject.products = JSON.stringify([]);
+      }
+    } else {
+      formObject.products = JSON.stringify([]);
+    }
+    
+    console.log("Sending invoice data:", formObject);
+    
+    const response = await api.post<Invoice>("/invoices", formObject);
     return response.data;
   },
 
   update: async (id: string, data: FormData) => {
-    const response = await api.put<Invoice>(`/invoices/${id}`, Object.fromEntries(data));
+    // Convert FormData to a proper object
+    const formObject = Object.fromEntries(data);
+    
+    // Ensure products is properly formatted as JSON
+    if (typeof formObject.products === 'string') {
+      try {
+        JSON.parse(formObject.products); // Validate JSON format
+      } catch (error) {
+        console.error("Invalid products JSON format:", error);
+        formObject.products = JSON.stringify([]);
+      }
+    } else {
+      formObject.products = JSON.stringify([]);
+    }
+    
+    console.log("Updating invoice data:", formObject);
+    
+    const response = await api.put<Invoice>(`/invoices/${id}`, formObject);
     return response.data;
   },
 

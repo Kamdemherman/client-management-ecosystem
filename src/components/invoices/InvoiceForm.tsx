@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { PaymentStatus, Invoice } from "@/types/invoice";
 import { useQuery } from "@tanstack/react-query";
 import { clientsService } from "@/services/clients.service";
@@ -84,23 +83,47 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
     }, 0);
   };
 
-  return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
+  const invoiceNumber = invoice?.invoiceNumber || generateInvoiceNumber();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    // Ensure required fields are present and properly formatted
+    const date = formData.get('date') || format(new Date(), "yyyy-MM-dd");
+    formData.set("date", date.toString());
+    
+    // Set invoice number
+    formData.set("invoiceNumber", invoiceNumber);
+    
+    // Set payment status
+    formData.set("paymentStatus", invoice?.paymentStatus || "pending");
+    
+    // Ensure products is properly formatted as a JSON string array
+    if (selectedProducts.length > 0) {
       formData.set("products", JSON.stringify(selectedProducts));
-      formData.set("amount", calculateTotal().toString());
-      formData.set("date", format(new Date(), "yyyy-MM-dd"));
-      formData.set("invoiceNumber", invoice?.invoiceNumber || generateInvoiceNumber());
-      formData.set("paymentStatus", "pending");
-      onSubmit(formData);
-    }}>
+    } else {
+      formData.set("products", JSON.stringify([]));
+    }
+    
+    // Set total amount
+    formData.set("amount", calculateTotal().toString());
+    
+    // Log the form data for debugging
+    console.log("Form data before submission:", Object.fromEntries(formData));
+    
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>N° Facture</Label>
             <Input 
-              value={invoice?.invoiceNumber || generateInvoiceNumber()} 
+              name="invoiceNumber"
+              value={invoiceNumber} 
               readOnly 
               className="bg-gray-100"
             />
@@ -117,7 +140,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
 
         <div className="space-y-2">
           <Label htmlFor="client">Client</Label>
-          <Select name="client" defaultValue={invoice?.client || "default-client"}>
+          <Select name="client" defaultValue={invoice?.client || ""} required>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
@@ -142,6 +165,12 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
               Ajouter un produit
             </Button>
           </div>
+
+          {selectedProducts.length === 0 && (
+            <div className="p-4 border rounded-lg text-center text-gray-500">
+              Aucun produit ajouté. Veuillez ajouter au moins un produit.
+            </div>
+          )}
 
           {selectedProducts.map((product, index) => (
             <div key={index} className="grid gap-4 p-4 border rounded-lg">
