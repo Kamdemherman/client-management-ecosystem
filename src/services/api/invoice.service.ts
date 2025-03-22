@@ -4,8 +4,14 @@ import type { Invoice } from "@/types/invoice";
 
 export const invoiceService = {
   getAll: async () => {
-    const response = await api.get<Invoice[]>("/invoices");
-    return response.data;
+    try {
+      const response = await api.get<Invoice[]>("/invoices");
+      // Ensure we always return an array
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return [];
+    }
   },
 
   getById: async (id: string) => {
@@ -15,17 +21,44 @@ export const invoiceService = {
 
   create: async (data: FormData) => {
     // Convert FormData to a proper object
-    const formObject = Object.fromEntries(data);
+    const formObject: Record<string, any> = {};
     
-    // Ensure products is properly formatted as JSON
+    // Iterate through FormData entries to capture all values
+    for (const [key, value] of data.entries()) {
+      formObject[key] = value;
+    }
+    
+    // Ensure required fields are present
+    if (!formObject.invoiceNumber) {
+      throw new Error("Invoice number is required");
+    }
+    
+    // Rename field from invoiceNumber to invoice_number for API compatibility
+    formObject.invoice_number = formObject.invoiceNumber;
+    delete formObject.invoiceNumber;
+    
+    // Ensure payment_status is set
+    if (!formObject.paymentStatus) {
+      formObject.payment_status = "pending";
+    } else {
+      // Rename field from paymentStatus to payment_status for API compatibility
+      formObject.payment_status = formObject.paymentStatus;
+      delete formObject.paymentStatus;
+    }
+    
+    // Ensure products is properly formatted as JSON array
     if (typeof formObject.products === 'string') {
       try {
-        JSON.parse(formObject.products); // Validate JSON format
+        // Validate that it's a proper JSON array
+        const productsArray = JSON.parse(formObject.products);
+        if (!Array.isArray(productsArray)) {
+          formObject.products = JSON.stringify([]);
+        }
       } catch (error) {
         console.error("Invalid products JSON format:", error);
         formObject.products = JSON.stringify([]);
       }
-    } else {
+    } else if (!formObject.products) {
       formObject.products = JSON.stringify([]);
     }
     
@@ -37,17 +70,38 @@ export const invoiceService = {
 
   update: async (id: string, data: FormData) => {
     // Convert FormData to a proper object
-    const formObject = Object.fromEntries(data);
+    const formObject: Record<string, any> = {};
     
-    // Ensure products is properly formatted as JSON
+    // Iterate through FormData entries to capture all values
+    for (const [key, value] of data.entries()) {
+      formObject[key] = value;
+    }
+    
+    // Rename field from invoiceNumber to invoice_number for API compatibility
+    if (formObject.invoiceNumber) {
+      formObject.invoice_number = formObject.invoiceNumber;
+      delete formObject.invoiceNumber;
+    }
+    
+    // Rename field from paymentStatus to payment_status for API compatibility
+    if (formObject.paymentStatus) {
+      formObject.payment_status = formObject.paymentStatus;
+      delete formObject.paymentStatus;
+    }
+    
+    // Ensure products is properly formatted as JSON array
     if (typeof formObject.products === 'string') {
       try {
-        JSON.parse(formObject.products); // Validate JSON format
+        // Validate that it's a proper JSON array
+        const productsArray = JSON.parse(formObject.products);
+        if (!Array.isArray(productsArray)) {
+          formObject.products = JSON.stringify([]);
+        }
       } catch (error) {
         console.error("Invalid products JSON format:", error);
         formObject.products = JSON.stringify([]);
       }
-    } else {
+    } else if (!formObject.products) {
       formObject.products = JSON.stringify([]);
     }
     

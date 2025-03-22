@@ -84,6 +84,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   };
 
   const invoiceNumber = invoice?.invoiceNumber || generateInvoiceNumber();
+  const paymentStatus = invoice?.paymentStatus || "pending";
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,7 +98,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
     formData.set("invoiceNumber", invoiceNumber);
     
     // Set payment status
-    formData.set("paymentStatus", invoice?.paymentStatus || "pending");
+    formData.set("paymentStatus", paymentStatus);
     
     // Ensure products is properly formatted as a JSON string array
     if (selectedProducts.length > 0) {
@@ -154,6 +155,24 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
                   </SelectItem>
                 ))
               )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="paymentStatus">Statut de paiement</Label>
+          <Select 
+            name="paymentStatus" 
+            defaultValue={invoice?.paymentStatus || "pending"}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Statut de paiement" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="paid">Payé</SelectItem>
+              <SelectItem value="pending">En attente</SelectItem>
+              <SelectItem value="overdue">En retard</SelectItem>
             </SelectContent>
           </Select>
         </div>
