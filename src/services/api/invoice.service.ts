@@ -1,3 +1,4 @@
+
 import { api } from "../api-config";
 import type { Invoice } from "@/types/invoice";
 
@@ -45,7 +46,7 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Explicitly ensure products is an array
+    // Handle products properly - ensure it's a valid array
     if (typeof formObject.products === 'string') {
       try {
         const parsed = JSON.parse(formObject.products);
@@ -56,7 +57,13 @@ export const invoiceService = {
         formObject.products = [];
       }
     } else if (!formObject.products) {
+      // If products is not defined or is null/undefined, create an empty array
       formObject.products = [];
+    }
+    
+    // Explicitly stringify products array for the API
+    if (Array.isArray(formObject.products)) {
+      formObject.products = JSON.stringify(formObject.products);
     }
     
     console.log("Sending invoice data:", formObject);
@@ -86,7 +93,7 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Explicitly ensure products is an array
+    // Handle products properly - ensure it's a valid array
     if (typeof formObject.products === 'string') {
       try {
         const parsed = JSON.parse(formObject.products);
@@ -97,7 +104,13 @@ export const invoiceService = {
         formObject.products = [];
       }
     } else if (!formObject.products) {
+      // If products is not defined or is null/undefined, create an empty array
       formObject.products = [];
+    }
+    
+    // Explicitly stringify products array for the API
+    if (Array.isArray(formObject.products)) {
+      formObject.products = JSON.stringify(formObject.products);
     }
     
     console.log("Updating invoice data:", formObject);
