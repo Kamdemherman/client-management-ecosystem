@@ -6,8 +6,23 @@ export const invoiceService = {
   getAll: async () => {
     try {
       const response = await api.get<Invoice[]>("/invoices");
-      // Ensure we always return an array
-      return Array.isArray(response.data) ? response.data : [];
+      
+      // Log the raw response for debugging
+      console.log("Raw invoices API response:", response.data);
+      
+      // Check if the response is an array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } 
+      
+      // If response.data has a data property that's an array (common API structure)
+      if (response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      
+      // Return empty array as fallback
+      console.error("Unexpected API response format:", response.data);
+      return [];
     } catch (error) {
       console.error("Error fetching invoices:", error);
       return [];
@@ -15,8 +30,13 @@ export const invoiceService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get<Invoice>(`/invoices/${id}`);
-    return response.data;
+    try {
+      const response = await api.get<Invoice>(`/invoices/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching invoice ${id}:`, error);
+      throw error;
+    }
   },
 
   create: async (data: FormData) => {
@@ -46,12 +66,13 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Handle products array - critical fix for API compatibility
+    // Handle products array
     let productsArray = [];
     
     if (formObject.products) {
       try {
         if (typeof formObject.products === 'string') {
+          // Attempt to parse JSON string
           const parsed = JSON.parse(formObject.products);
           if (Array.isArray(parsed)) {
             productsArray = parsed;
@@ -61,19 +82,19 @@ export const invoiceService = {
         }
       } catch (error) {
         console.error("Failed to parse products JSON:", error);
-        // Default to empty array if parsing fails
         productsArray = [];
       }
     }
     
-    // Explicitly assign products as an array (not stringified)
+    // Ensure products is an array for API compatibility
     formObject.products = productsArray;
     
-    console.log("Sending invoice data with products (create):", formObject);
+    console.log("Sending invoice data to API:", formObject);
     console.log("Products type:", typeof formObject.products);
     console.log("Is products array:", Array.isArray(formObject.products));
     
     const response = await api.post<Invoice>("/invoices", formObject);
+    console.log("Create invoice response:", response.data);
     return response.data;
   },
 
@@ -117,14 +138,15 @@ export const invoiceService = {
       }
     }
     
-    // Explicitly assign products as an array (not stringified)
+    // Ensure products is an array for API compatibility
     formObject.products = productsArray;
     
-    console.log("Updating invoice data with products:", formObject);
+    console.log("Updating invoice data:", formObject);
     console.log("Products type:", typeof formObject.products);
     console.log("Is products array:", Array.isArray(formObject.products));
     
     const response = await api.put<Invoice>(`/invoices/${id}`, formObject);
+    console.log("Update invoice response:", response.data);
     return response.data;
   },
 
