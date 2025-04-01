@@ -84,7 +84,7 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
   };
 
   const invoiceNumber = invoice?.invoiceNumber || generateInvoiceNumber();
-  const paymentStatus = invoice?.paymentStatus || "pending";
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(invoice?.paymentStatus || "pending");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -100,12 +100,9 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
     // Set payment status
     formData.set("paymentStatus", paymentStatus);
     
-    // Ensure products is properly formatted as a JSON string array
-    if (selectedProducts.length > 0) {
-      formData.set("products", JSON.stringify(selectedProducts));
-    } else {
-      formData.set("products", JSON.stringify([]));
-    }
+    // Ensure products is properly formatted as an array
+    // We're directly providing the array, not a string
+    formData.set("products", JSON.stringify(selectedProducts));
     
     // Set total amount
     formData.set("amount", calculateTotal().toString());
@@ -163,7 +160,8 @@ export const InvoiceForm = ({ invoice, onSubmit }: InvoiceFormProps) => {
           <Label htmlFor="paymentStatus">Statut de paiement</Label>
           <Select 
             name="paymentStatus" 
-            defaultValue={invoice?.paymentStatus || "pending"}
+            defaultValue={paymentStatus}
+            onValueChange={(value: PaymentStatus) => setPaymentStatus(value)}
             required
           >
             <SelectTrigger>

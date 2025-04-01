@@ -1,4 +1,3 @@
-
 import { api } from "../api-config";
 import type { Invoice } from "@/types/invoice";
 
@@ -46,20 +45,18 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Ensure products is properly formatted as JSON array
+    // Explicitly ensure products is an array
     if (typeof formObject.products === 'string') {
       try {
-        // Validate that it's a proper JSON array
-        const productsArray = JSON.parse(formObject.products);
-        if (!Array.isArray(productsArray)) {
-          formObject.products = JSON.stringify([]);
-        }
+        const parsed = JSON.parse(formObject.products);
+        // Ensure it's an array, even if empty
+        formObject.products = Array.isArray(parsed) ? parsed : [];
       } catch (error) {
         console.error("Invalid products JSON format:", error);
-        formObject.products = JSON.stringify([]);
+        formObject.products = [];
       }
     } else if (!formObject.products) {
-      formObject.products = JSON.stringify([]);
+      formObject.products = [];
     }
     
     console.log("Sending invoice data:", formObject);
@@ -89,20 +86,18 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Ensure products is properly formatted as JSON array
+    // Explicitly ensure products is an array
     if (typeof formObject.products === 'string') {
       try {
-        // Validate that it's a proper JSON array
-        const productsArray = JSON.parse(formObject.products);
-        if (!Array.isArray(productsArray)) {
-          formObject.products = JSON.stringify([]);
-        }
+        const parsed = JSON.parse(formObject.products);
+        // Ensure it's an array, even if empty
+        formObject.products = Array.isArray(parsed) ? parsed : [];
       } catch (error) {
         console.error("Invalid products JSON format:", error);
-        formObject.products = JSON.stringify([]);
+        formObject.products = [];
       }
     } else if (!formObject.products) {
-      formObject.products = JSON.stringify([]);
+      formObject.products = [];
     }
     
     console.log("Updating invoice data:", formObject);

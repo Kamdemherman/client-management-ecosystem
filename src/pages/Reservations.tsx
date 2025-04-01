@@ -4,7 +4,7 @@ import { ReservationCalendar } from "@/components/reservations/ReservationCalend
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { reservationsService } from "@/services/reservations.service";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { User, Package } from "lucide-react";
@@ -17,7 +17,12 @@ const Reservations = () => {
 
   // Get the most recent 5 reservations
   const recentReservations = [...reservations]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => {
+      // Handle createdAt dates safely
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    })
     .slice(0, 5);
 
   const getStatusColor = (status: string) => {
@@ -30,6 +35,21 @@ const Reservations = () => {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Safe date formatter that handles invalid dates
+  const formatSafeDate = (dateString: string) => {
+    try {
+      // Check if the date string is valid before formatting
+      const date = parseISO(dateString);
+      if (!isValid(date)) {
+        return "Date invalide";
+      }
+      return format(date, 'dd MMMM yyyy', { locale: fr });
+    } catch (error) {
+      console.error("Error formatting date:", dateString, error);
+      return "Date invalide";
     }
   };
 
@@ -61,17 +81,17 @@ const Reservations = () => {
                             {reservation.status}
                           </Badge>
                           <span className="text-sm text-gray-500">
-                            {format(new Date(reservation.reservation_date), 'dd MMMM yyyy', { locale: fr })}
+                            {reservation.reservation_date ? formatSafeDate(reservation.reservation_date) : "Date non spécifiée"}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">{reservation.clientName}</span>
+                        <span className="font-medium">{reservation.clientName || "Client inconnu"}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Package className="h-4 w-4 text-gray-500" />
-                        <span>{reservation.productName} - {reservation.quantity} unités</span>
+                        <span>{reservation.productName || "Produit inconnu"} - {reservation.quantity || 0} unités</span>
                       </div>
                     </div>
                   ))
