@@ -22,18 +22,27 @@ import { Product } from "@/types/product";
 const MAX_RESERVATIONS_PER_DAY = 5;
 
 // Safe date formatter function to prevent "Invalid time value" errors
-const formatSafeDate = (dateString: string | null | undefined, formatStr: string = 'dd/MM/yyyy') => {
-  if (!dateString) return "Date non spécifiée";
+const formatSafeDate = (dateInput: Date | string | null | undefined, formatStr: string = 'dd/MM/yyyy') => {
+  if (!dateInput) return "Date non spécifiée";
   
   try {
-    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    // Handle different date input types
+    let date: Date;
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      date = parseISO(dateInput);
+    } else {
+      return "Format de date invalide";
+    }
+    
     if (!isValid(date)) {
-      console.warn("Invalid date encountered:", dateString);
+      console.warn("Invalid date encountered:", dateInput);
       return "Date invalide";
     }
-    return format(date, formatStr);
+    return format(date, formatStr, { locale: fr });
   } catch (error) {
-    console.error("Error formatting date:", dateString, error);
+    console.error("Error formatting date:", dateInput, error);
     return "Date invalide";
   }
 };
@@ -195,20 +204,25 @@ export const ReservationCalendar = () => {
 
     console.log("Création de réservation avec:", { 
       clientId, clientName, productId, productName, 
-      quantity: parseInt(quantity), agencyId, agencyName 
+      quantity: parseInt(quantity), agencyId, agencyName,
+      selectedDate
     });
+
+    // Format the selected date as a string for the API
+    const formattedReservationDate = format(selectedDate, 'yyyy-MM-dd');
+    const formattedDeliveryDate = format(addDays(selectedDate, 1), 'yyyy-MM-dd');
 
     // Format the data according to what the API expects
     createReservation.mutate({
-      client_id: clientId,            // Changed from clientId
+      client_id: clientId,
       clientName: client.name,
-      product_id: productId,          // Changed from productId
+      product_id: productId,
       productName: product.name,
       quantity: parseInt(quantity),
       status: "En attente",
-      reservation_date: format(selectedDate, 'yyyy-MM-dd'),  // Changed from reservationDate
-      deliveryDate: format(addDays(selectedDate, 1), 'yyyy-MM-dd'),
-      agency_id: agencyId,           // Changed from agencyId
+      reservation_date: formattedReservationDate,
+      deliveryDate: formattedDeliveryDate,
+      agency_id: agencyId,
       agencyName
     });
   };

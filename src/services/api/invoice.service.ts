@@ -46,28 +46,32 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Handle products field - ensure it's a valid array
+    // Handle products array - critical fix for API compatibility
     let productsArray = [];
     
     if (formObject.products) {
-      if (typeof formObject.products === 'string') {
-        try {
+      try {
+        if (typeof formObject.products === 'string') {
           const parsed = JSON.parse(formObject.products);
           if (Array.isArray(parsed)) {
             productsArray = parsed;
           }
-        } catch (error) {
-          console.error("Invalid products JSON format:", error);
+        } else if (Array.isArray(formObject.products)) {
+          productsArray = formObject.products;
         }
-      } else if (Array.isArray(formObject.products)) {
-        productsArray = formObject.products;
+      } catch (error) {
+        console.error("Failed to parse products JSON:", error);
+        // Default to empty array if parsing fails
+        productsArray = [];
       }
     }
     
-    // Always assign products as a string representation of an array
-    formObject.products = JSON.stringify(productsArray);
+    // Explicitly assign products as an array (not stringified)
+    formObject.products = productsArray;
     
-    console.log("Sending invoice data:", formObject);
+    console.log("Sending invoice data with products (create):", formObject);
+    console.log("Products type:", typeof formObject.products);
+    console.log("Is products array:", Array.isArray(formObject.products));
     
     const response = await api.post<Invoice>("/invoices", formObject);
     return response.data;
@@ -94,28 +98,31 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Handle products field - ensure it's a valid array
+    // Handle products array - same fix as in create
     let productsArray = [];
     
     if (formObject.products) {
-      if (typeof formObject.products === 'string') {
-        try {
+      try {
+        if (typeof formObject.products === 'string') {
           const parsed = JSON.parse(formObject.products);
           if (Array.isArray(parsed)) {
             productsArray = parsed;
           }
-        } catch (error) {
-          console.error("Invalid products JSON format:", error);
+        } else if (Array.isArray(formObject.products)) {
+          productsArray = formObject.products;
         }
-      } else if (Array.isArray(formObject.products)) {
-        productsArray = formObject.products;
+      } catch (error) {
+        console.error("Failed to parse products JSON:", error);
+        productsArray = [];
       }
     }
     
-    // Always assign products as a string representation of an array
-    formObject.products = JSON.stringify(productsArray);
+    // Explicitly assign products as an array (not stringified)
+    formObject.products = productsArray;
     
-    console.log("Updating invoice data:", formObject);
+    console.log("Updating invoice data with products:", formObject);
+    console.log("Products type:", typeof formObject.products);
+    console.log("Is products array:", Array.isArray(formObject.products));
     
     const response = await api.put<Invoice>(`/invoices/${id}`, formObject);
     return response.data;
