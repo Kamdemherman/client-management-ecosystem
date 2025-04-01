@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { fr } from "date-fns/locale";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO, isValid } from "date-fns";
 import { Plus, Calendar as CalendarIcon, User, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,23 @@ import { Client } from "@/types/client";
 import { Product } from "@/types/product";
 
 const MAX_RESERVATIONS_PER_DAY = 5;
+
+// Safe date formatter function to prevent "Invalid time value" errors
+const formatSafeDate = (dateString: string | null | undefined, formatStr: string = 'dd/MM/yyyy') => {
+  if (!dateString) return "Date non spécifiée";
+  
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    if (!isValid(date)) {
+      console.warn("Invalid date encountered:", dateString);
+      return "Date invalide";
+    }
+    return format(date, formatStr);
+  } catch (error) {
+    console.error("Error formatting date:", dateString, error);
+    return "Date invalide";
+  }
+};
 
 export const ReservationCalendar = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -67,11 +84,20 @@ export const ReservationCalendar = () => {
     }
   });
 
-  const getReservationsForDate = (date: Date) => {
+  const getReservationsForDate = (date: Date | undefined) => {
     if (!date) return [];
-    return reservations.filter(res => 
-      format(new Date(res.reservation_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-    );
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    return reservations.filter(res => {
+      if (!res.reservation_date) return false;
+      try {
+        const resDate = parseISO(res.reservation_date);
+        if (!isValid(resDate)) return false;
+        return format(resDate, 'yyyy-MM-dd') === formattedDate;
+      } catch (error) {
+        console.error("Error comparing dates:", error);
+        return false;
+      }
+    });
   };
 
   const findNextAvailableDate = (startDate: Date): Date => {
@@ -106,7 +132,7 @@ export const ReservationCalendar = () => {
       const nextAvailableDate = findNextAvailableDate(addDays(selectedDate, 1));
       toast({
         title: "Jour saturé",
-        description: `Le nombre maximum de réservations pour ce jour est atteint. Prochaine date disponible: ${format(nextAvailableDate, 'dd/MM/yyyy')}`,
+        description: `Le nombre maximum de réservations pour ce jour est atteint. Prochaine date disponible: ${formatSafeDate(nextAvailableDate)}`,
         variant: "destructive"
       });
       setSelectedDate(nextAvailableDate);
@@ -232,7 +258,7 @@ export const ReservationCalendar = () => {
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : "Sélectionner une date"}
+                      {selectedDate ? formatSafeDate(selectedDate) : "Sélectionner une date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -325,7 +351,7 @@ export const ReservationCalendar = () => {
                         {reservation.status}
                       </Badge>
                       <span className="text-sm text-gray-500">
-                        {format(new Date(reservation.reservation_date), 'dd/MM/yyyy')}
+                        {formatSafeDate(reservation.reservation_date)}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">

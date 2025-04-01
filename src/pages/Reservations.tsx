@@ -39,7 +39,9 @@ const Reservations = () => {
   };
 
   // Safe date formatter that handles invalid dates
-  const formatSafeDate = (dateString: string) => {
+  const formatSafeDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Date non spécifiée";
+    
     try {
       // Check if the date string is valid before formatting
       const date = parseISO(dateString);
@@ -81,7 +83,7 @@ const Reservations = () => {
                             {reservation.status}
                           </Badge>
                           <span className="text-sm text-gray-500">
-                            {reservation.reservation_date ? formatSafeDate(reservation.reservation_date) : "Date non spécifiée"}
+                            {formatSafeDate(reservation.reservation_date)}
                           </span>
                         </div>
                       </div>

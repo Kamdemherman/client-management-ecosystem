@@ -46,25 +46,26 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Handle products properly - ensure it's a valid array
-    if (typeof formObject.products === 'string') {
-      try {
-        const parsed = JSON.parse(formObject.products);
-        // Ensure it's an array, even if empty
-        formObject.products = Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
-        console.error("Invalid products JSON format:", error);
-        formObject.products = [];
+    // Handle products field - ensure it's a valid array
+    let productsArray = [];
+    
+    if (formObject.products) {
+      if (typeof formObject.products === 'string') {
+        try {
+          const parsed = JSON.parse(formObject.products);
+          if (Array.isArray(parsed)) {
+            productsArray = parsed;
+          }
+        } catch (error) {
+          console.error("Invalid products JSON format:", error);
+        }
+      } else if (Array.isArray(formObject.products)) {
+        productsArray = formObject.products;
       }
-    } else if (!formObject.products) {
-      // If products is not defined or is null/undefined, create an empty array
-      formObject.products = [];
     }
     
-    // Explicitly stringify products array for the API
-    if (Array.isArray(formObject.products)) {
-      formObject.products = JSON.stringify(formObject.products);
-    }
+    // Always assign products as a string representation of an array
+    formObject.products = JSON.stringify(productsArray);
     
     console.log("Sending invoice data:", formObject);
     
@@ -93,25 +94,26 @@ export const invoiceService = {
       delete formObject.paymentStatus;
     }
     
-    // Handle products properly - ensure it's a valid array
-    if (typeof formObject.products === 'string') {
-      try {
-        const parsed = JSON.parse(formObject.products);
-        // Ensure it's an array, even if empty
-        formObject.products = Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
-        console.error("Invalid products JSON format:", error);
-        formObject.products = [];
+    // Handle products field - ensure it's a valid array
+    let productsArray = [];
+    
+    if (formObject.products) {
+      if (typeof formObject.products === 'string') {
+        try {
+          const parsed = JSON.parse(formObject.products);
+          if (Array.isArray(parsed)) {
+            productsArray = parsed;
+          }
+        } catch (error) {
+          console.error("Invalid products JSON format:", error);
+        }
+      } else if (Array.isArray(formObject.products)) {
+        productsArray = formObject.products;
       }
-    } else if (!formObject.products) {
-      // If products is not defined or is null/undefined, create an empty array
-      formObject.products = [];
     }
     
-    // Explicitly stringify products array for the API
-    if (Array.isArray(formObject.products)) {
-      formObject.products = JSON.stringify(formObject.products);
-    }
+    // Always assign products as a string representation of an array
+    formObject.products = JSON.stringify(productsArray);
     
     console.log("Updating invoice data:", formObject);
     
