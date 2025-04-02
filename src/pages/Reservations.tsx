@@ -1,18 +1,44 @@
 
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ReservationCalendar } from "@/components/reservations/ReservationCalendar";
+import { ReservationForm } from "@/components/reservations/ReservationForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { reservationsService } from "@/services/reservations.service";
 import { format, parseISO, isValid } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { User, Package } from "lucide-react";
+import { User, Package, Plus, Calendar, Edit, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Reservation } from "@/types/reservation";
 
 const Reservations = () => {
-  const { data: reservations = [] } = useQuery({
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: reservations = [], isLoading } = useQuery({
     queryKey: ['reservations'],
     queryFn: reservationsService.getAll
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: reservationsService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      toast({
+        title: "Réservation supprimée",
+        description: "La réservation a été supprimée avec succès."
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedReservation(null);
+    }
   });
 
   // Get the most recent 5 reservations
@@ -54,6 +80,32 @@ const Reservations = () => {
       return "Date invalide";
     }
   };
+  
+  const handleEdit = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsFormDialogOpen(true);
+  };
+  
+  const handleDelete = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const handleFormSuccess = () => {
+    setIsFormDialogOpen(false);
+    setSelectedReservation(null);
+    queryClient.invalidateQueries({ queryKey: ['reservations'] });
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -63,12 +115,17 @@ const Reservations = () => {
             <h1 className="text-3xl font-bold text-gray-900">Gestion des Réservations</h1>
             <p className="mt-2 text-gray-600">Planifiez et gérez les réservations</p>
           </div>
+          <Button onClick={() => setIsFormDialogOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nouvelle Réservation
+          </Button>
         </div>
 
         <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Réservations récentes</CardTitle>
+              <Calendar className="h-5 w-5 text-gray-500" />
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -79,12 +136,20 @@ const Reservations = () => {
                     <div key={reservation.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className={getStatusColor(reservation.status)}>
+                          <Badge className={getStatusColor(reservation.status)}>
                             {reservation.status}
                           </Badge>
                           <span className="text-sm text-gray-500">
                             {formatSafeDate(reservation.reservation_date)}
                           </span>
+                        </div>
+                        <div className="flex space-x-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(reservation)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(reservation)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -105,6 +170,41 @@ const Reservations = () => {
           <ReservationCalendar />
         </div>
       </div>
+
+      {/* Form Dialog */}
+      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{selectedReservation ? "Modifier la réservation" : "Nouvelle réservation"}</DialogTitle>
+          </DialogHeader>
+          <ReservationForm 
+            reservation={selectedReservation} 
+            onSuccess={handleFormSuccess}
+            onCancel={() => setIsFormDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedReservation && deleteMutation.mutate(selectedReservation.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

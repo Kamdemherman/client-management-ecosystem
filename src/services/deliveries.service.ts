@@ -56,6 +56,7 @@ export const deliveriesService = {
 
   create: async (delivery: Omit<Delivery, "id" | "createdAt" | "updatedAt">): Promise<Delivery> => {
     try {
+      console.log("Creating delivery with data:", delivery);
       const response = await api.post<ApiResponse<Delivery>>("/deliveries", delivery);
       
       // Parse response based on structure

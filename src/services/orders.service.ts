@@ -56,6 +56,7 @@ export const ordersService = {
 
   create: async (order: Omit<Order, "id" | "date">): Promise<Order> => {
     try {
+      console.log("Creating order with data:", order);
       const response = await api.post<ApiResponse<Order>>("/orders", order);
       
       // Parse response based on structure

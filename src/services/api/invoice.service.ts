@@ -1,4 +1,3 @@
-
 import { api } from "../api-config";
 import type { Invoice } from "@/types/invoice";
 
@@ -54,22 +53,22 @@ export const invoiceService = {
       formObject[key] = value;
     }
     
-    // Ensure required fields are present
-    if (!formObject.invoiceNumber) {
-      throw new Error("Invoice number is required");
+    // Ensure required fields are present and properly named for API compatibility
+    if (formObject.invoiceNumber) {
+      formObject.invoice_number = formObject.invoiceNumber;
+      delete formObject.invoiceNumber;
     }
     
-    // Rename field from invoiceNumber to invoice_number for API compatibility
-    formObject.invoice_number = formObject.invoiceNumber;
-    delete formObject.invoiceNumber;
-    
-    // Ensure payment_status is set
-    if (!formObject.paymentStatus) {
-      formObject.payment_status = "pending";
-    } else {
-      // Rename field from paymentStatus to payment_status for API compatibility
+    if (formObject.paymentStatus) {
       formObject.payment_status = formObject.paymentStatus;
       delete formObject.paymentStatus;
+    } else {
+      formObject.payment_status = "pending";
+    }
+    
+    // Handle client name field
+    if (formObject.client) {
+      formObject.client_name = formObject.client;
     }
     
     // Handle products array
@@ -96,8 +95,6 @@ export const invoiceService = {
     formObject.products = productsArray;
     
     console.log("Sending invoice data to API:", formObject);
-    console.log("Products type:", typeof formObject.products);
-    console.log("Is products array:", Array.isArray(formObject.products));
     
     const response = await api.post<Invoice>("/invoices", formObject);
     console.log("Create invoice response:", response.data);
@@ -161,13 +158,20 @@ export const invoiceService = {
   },
 
   generatePDF: async (id: string) => {
-    const response = await api.get(`/invoices/${id}/pdf`, { 
-      responseType: 'blob',
-      headers: {
-        'Accept': 'application/pdf'
-      }
-    });
-    return response.data;
+    console.log(`Generating PDF for invoice ${id}`);
+    try {
+      const response = await api.get(`/invoices/${id}/pdf`, { 
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      });
+      console.log("PDF response received:", response.status);
+      return response.data;
+    } catch (error) {
+      console.error(`Error generating PDF for invoice ${id}:`, error);
+      throw error;
+    }
   },
 
   sendEmail: async (id: string) => {
