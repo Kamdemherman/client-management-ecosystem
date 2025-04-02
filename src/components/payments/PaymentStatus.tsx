@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +16,9 @@ const statusConfig = {
 };
 
 export const PaymentStatusBadge = ({ status }: PaymentStatusProps) => {
-  const config = statusConfig[status];
+  // Add a fallback in case status is not in statusConfig
+  const config = statusConfig[status] || statusConfig.pending;
+  
   return (
     <Badge className={cn("font-medium", config.class)}>
       {config.label}
