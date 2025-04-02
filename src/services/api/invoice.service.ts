@@ -2,10 +2,13 @@
 import { api } from "../api-config";
 import type { Invoice } from "@/types/invoice";
 
+// Define a type for possible API response formats
+type ApiResponse<T> = T | { data: T } | Record<string, any>;
+
 export const invoiceService = {
   getAll: async () => {
     try {
-      const response = await api.get<Invoice[]>("/invoices");
+      const response = await api.get<ApiResponse<Invoice[]>>("/invoices");
       
       // Log the raw response for debugging
       console.log("Raw invoices API response:", response.data);
@@ -15,9 +18,12 @@ export const invoiceService = {
         return response.data;
       } 
       
-      // If response.data has a data property that's an array (common API structure)
-      if (response.data && Array.isArray(response.data.data)) {
-        return response.data.data;
+      // If response.data has a data property that might be an array
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        const nestedData = response.data.data;
+        if (Array.isArray(nestedData)) {
+          return nestedData;
+        }
       }
       
       // Return empty array as fallback
