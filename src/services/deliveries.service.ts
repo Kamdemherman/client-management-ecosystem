@@ -5,6 +5,14 @@ import { api } from "./api-config";
 // Define a type for possible API response formats
 type ApiResponse<T> = T | { data: T } | Record<string, any>;
 
+// Type pour la création d'une livraison
+type DeliveryCreateRequest = Omit<Delivery, "id" | "createdAt" | "updatedAt"> & {
+  client_id?: string;
+  client_name?: string;
+  agency_id?: string;
+  agency_name?: string;
+};
+
 export const deliveriesService = {
   getAll: async (): Promise<Delivery[]> => {
     try {
@@ -54,10 +62,22 @@ export const deliveriesService = {
     }
   },
 
-  create: async (delivery: Omit<Delivery, "id" | "createdAt" | "updatedAt">): Promise<Delivery> => {
+  create: async (delivery: DeliveryCreateRequest): Promise<Delivery> => {
     try {
-      console.log("Creating delivery with data:", delivery);
-      const response = await api.post<ApiResponse<Delivery>>("/deliveries", delivery);
+      // Adapter les noms de champs si nécessaire pour le backend
+      const apiPayload: Record<string, any> = { ...delivery };
+      
+      // Gérer les conversions de noms de champs si nécessaire
+      if (delivery.clientName && !delivery.client_id) {
+        apiPayload.client_name = delivery.clientName;
+      }
+      
+      if (delivery.agencyName && !delivery.agency_id) {
+        apiPayload.agency_name = delivery.agencyName;
+      }
+      
+      console.log("Creating delivery with data:", apiPayload);
+      const response = await api.post<ApiResponse<Delivery>>("/deliveries", apiPayload);
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {
@@ -76,7 +96,19 @@ export const deliveriesService = {
 
   update: async (id: string, delivery: Partial<Delivery>): Promise<Delivery> => {
     try {
-      const response = await api.put<ApiResponse<Delivery>>(`/deliveries/${id}`, delivery);
+      // Adapter les noms de champs si nécessaire pour le backend
+      const apiPayload: Record<string, any> = { ...delivery };
+      
+      // Gérer les conversions de noms de champs si nécessaire
+      if (delivery.clientName) {
+        apiPayload.client_name = delivery.clientName;
+      }
+      
+      if (delivery.agencyName) {
+        apiPayload.agency_name = delivery.agencyName;
+      }
+      
+      const response = await api.put<ApiResponse<Delivery>>(`/deliveries/${id}`, apiPayload);
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {

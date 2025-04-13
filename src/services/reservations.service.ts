@@ -1,3 +1,4 @@
+
 import { Reservation } from "@/types/reservation";
 import { api } from "./api-config";
 
@@ -23,6 +24,9 @@ export const reservationsService = {
   getAll: async (): Promise<Reservation[]> => {
     try {
       const response = await api.get<ApiResponse<Reservation[]>>("/reservations");
+      
+      // Log the raw response for debugging
+      console.log("Raw reservations API response:", response.data);
       
       // Check if the response is an array
       if (Array.isArray(response.data)) {
@@ -92,31 +96,118 @@ export const reservationsService = {
   },
 
   update: async (id: string, reservation: Partial<Reservation>): Promise<Reservation> => {
-    const response = await api.put<Reservation>(`/reservations/${id}`, reservation);
-    return response.data;
+    try {
+      const response = await api.put<ApiResponse<Reservation>>(`/reservations/${id}`, reservation);
+      
+      // Parse response based on structure
+      if (response.data && typeof response.data === 'object') {
+        if ('data' in response.data) {
+          return response.data.data as Reservation;
+        }
+        return response.data as Reservation;
+      }
+      
+      throw new Error("Invalid reservation response data");
+    } catch (error) {
+      console.error(`Error updating reservation ${id}:`, error);
+      throw error;
+    }
   },
 
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/reservations/${id}`);
+    try {
+      await api.delete(`/reservations/${id}`);
+    } catch (error) {
+      console.error(`Error deleting reservation ${id}:`, error);
+      throw error;
+    }
   },
 
   updateStatus: async (id: string, status: Reservation["status"]): Promise<Reservation> => {
-    const response = await api.patch<Reservation>(`/reservations/${id}/status`, { status });
-    return response.data;
+    try {
+      const response = await api.patch<ApiResponse<Reservation>>(`/reservations/${id}/status`, { status });
+      
+      // Parse response based on structure
+      if (response.data && typeof response.data === 'object') {
+        if ('data' in response.data) {
+          return response.data.data as Reservation;
+        }
+        return response.data as Reservation;
+      }
+      
+      throw new Error("Invalid reservation response data");
+    } catch (error) {
+      console.error(`Error updating reservation status ${id}:`, error);
+      throw error;
+    }
   },
 
   getByAgency: async (agencyId: string): Promise<Reservation[]> => {
-    const response = await api.get<Reservation[]>(`/agencies/${agencyId}/reservations`);
-    return response.data;
+    try {
+      const response = await api.get<ApiResponse<Reservation[]>>(`/agencies/${agencyId}/reservations`);
+      
+      // Similar parsing as getAll
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        const nestedData = response.data.data;
+        if (Array.isArray(nestedData)) {
+          return nestedData;
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`Error fetching reservations for agency ${agencyId}:`, error);
+      return [];
+    }
   },
 
   getByClient: async (clientId: string): Promise<Reservation[]> => {
-    const response = await api.get<Reservation[]>(`/clients/${clientId}/reservations`);
-    return response.data;
+    try {
+      const response = await api.get<ApiResponse<Reservation[]>>(`/clients/${clientId}/reservations`);
+      
+      // Similar parsing as getAll
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        const nestedData = response.data.data;
+        if (Array.isArray(nestedData)) {
+          return nestedData;
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`Error fetching reservations for client ${clientId}:`, error);
+      return [];
+    }
   },
 
   getByProduct: async (productId: string): Promise<Reservation[]> => {
-    const response = await api.get<Reservation[]>(`/products/${productId}/reservations`);
-    return response.data;
+    try {
+      const response = await api.get<ApiResponse<Reservation[]>>(`/products/${productId}/reservations`);
+      
+      // Similar parsing as getAll
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        const nestedData = response.data.data;
+        if (Array.isArray(nestedData)) {
+          return nestedData;
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`Error fetching reservations for product ${productId}:`, error);
+      return [];
+    }
   }
 };

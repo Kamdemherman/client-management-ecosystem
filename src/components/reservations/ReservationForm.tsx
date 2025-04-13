@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { reservationsService } from "@/services/reservations.service";
+import { clientsService } from "@/services/clients.service";
+import { inventoryService } from "@/services/inventory.service";
+import { useQuery } from "@tanstack/react-query";
 import type { Reservation } from "@/types/reservation";
 
 interface ReservationFormProps {
@@ -32,6 +35,18 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
     notes: reservation?.notes || "",
   });
 
+  // Récupérer la liste des clients
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: clientsService.getAll
+  });
+
+  // Récupérer la liste des produits
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: inventoryService.getAll
+  });
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -41,14 +56,45 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleClientSelect = (clientId: string) => {
+    const selectedClient = clients.find(c => c.id.toString() === clientId);
+    if (selectedClient) {
+      setFormData(prev => ({
+        ...prev,
+        client_id: clientId,
+        clientName: selectedClient.name
+      }));
+    }
+  };
+
+  const handleProductSelect = (productId: string) => {
+    const selectedProduct = products.find(p => p.id.toString() === productId);
+    if (selectedProduct) {
+      setFormData(prev => ({
+        ...prev,
+        product_id: productId,
+        productName: selectedProduct.name
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.client_id || !formData.product_id) {
+    // Vérifier que les champs requis sont remplis
+    if (!formData.client_id || !formData.clientName) {
       toast({
         title: "Erreur de validation",
-        description: "L'ID du client et l'ID du produit sont requis.",
+        description: "Veuillez sélectionner un client.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.product_id || !formData.productName) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez sélectionner un produit.",
         variant: "destructive"
       });
       return;
@@ -58,14 +104,14 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
     
     try {
       if (reservation) {
-        // Update existing reservation
+        // Mettre à jour la réservation existante
         await reservationsService.update(reservation.id, formData);
         toast({
           title: "Réservation mise à jour",
           description: "La réservation a été mise à jour avec succès."
         });
       } else {
-        // Create new reservation
+        // Créer une nouvelle réservation
         await reservationsService.create(formData);
         toast({
           title: "Réservation créée",
@@ -89,15 +135,27 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="client_id">ID Client *</Label>
-          <Input
-            id="client_id"
-            name="client_id"
+          <Label htmlFor="client_id">Client *</Label>
+          <Select
             value={formData.client_id}
-            onChange={handleInputChange}
-            placeholder="ID du client"
+            onValueChange={handleClientSelect}
             required
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un client" />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.length === 0 ? (
+                <SelectItem value="no-client">Aucun client disponible</SelectItem>
+              ) : (
+                clients.map(client => (
+                  <SelectItem key={client.id} value={client.id.toString()}>
+                    {client.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="clientName">Nom du Client</Label>
@@ -107,21 +165,34 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
             value={formData.clientName}
             onChange={handleInputChange}
             placeholder="Nom du client"
+            readOnly
           />
         </div>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="product_id">ID Produit *</Label>
-          <Input
-            id="product_id"
-            name="product_id"
+          <Label htmlFor="product_id">Produit *</Label>
+          <Select
             value={formData.product_id}
-            onChange={handleInputChange}
-            placeholder="ID du produit"
+            onValueChange={handleProductSelect}
             required
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un produit" />
+            </SelectTrigger>
+            <SelectContent>
+              {products.length === 0 ? (
+                <SelectItem value="no-product">Aucun produit disponible</SelectItem>
+              ) : (
+                products.map(product => (
+                  <SelectItem key={product.id} value={product.id.toString()}>
+                    {product.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="productName">Nom du Produit</Label>
@@ -131,6 +202,7 @@ export const ReservationForm = ({ onSuccess, onCancel, reservation }: Reservatio
             value={formData.productName}
             onChange={handleInputChange}
             placeholder="Nom du produit"
+            readOnly
           />
         </div>
       </div>
