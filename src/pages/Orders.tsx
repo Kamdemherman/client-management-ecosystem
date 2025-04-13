@@ -4,16 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ShoppingCart, Eye, Package, Trash2, Clock } from "lucide-react";
+import { Search, ShoppingCart, Eye, Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ordersService } from "@/services/orders.service";
 import type { Order } from "@/types/order";
+import { OrderForm } from "@/components/orders/OrderForm";
+import { OrderDetailsDialog } from "@/components/orders/OrderDetailsDialog";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -21,6 +25,11 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -29,14 +38,41 @@ const Orders = () => {
     queryFn: ordersService.getAll
   });
 
+  const createMutation = useMutation({
+    mutationFn: ordersService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: "Commande créée",
+        description: "La commande a été créée avec succès."
+      });
+      setIsNewDialogOpen(false);
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Omit<Order, "id" | "date"> }) => 
+      ordersService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: "Commande mise à jour",
+        description: "La commande a été mise à jour avec succès."
+      });
+      setEditingOrder(null);
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: ordersService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast({
         title: "Commande supprimée",
-        description: "La commande a été supprimée avec succès.",
+        description: "La commande a été supprimée avec succès."
       });
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
     }
   });
 
@@ -47,10 +83,29 @@ const Orders = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast({
         title: "Statut mis à jour",
-        description: "Le statut de la commande a été mis à jour avec succès.",
+        description: "Le statut de la commande a été mis à jour avec succès."
       });
     }
   });
+
+  const handleCreateOrder = (data: Omit<Order, "id" | "date">) => {
+    createMutation.mutate(data);
+  };
+
+  const handleUpdateOrder = (data: Omit<Order, "id" | "date">) => {
+    if (!editingOrder) return;
+    updateMutation.mutate({ id: editingOrder.id, data });
+  };
+
+  const confirmDelete = (order: Order) => {
+    setOrderToDelete(order);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!orderToDelete) return;
+    deleteMutation.mutate(orderToDelete.id);
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,7 +123,9 @@ const Orders = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div>Chargement...</div>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+        </div>
       </DashboardLayout>
     );
   }
@@ -81,9 +138,10 @@ const Orders = () => {
             <h1 className="text-3xl font-bold text-gray-900">Gestion des Commandes</h1>
             <p className="mt-2 text-gray-600">Suivez et gérez les commandes clients</p>
           </div>
-          <div className="p-3 bg-primary-100 rounded-full">
-            <ShoppingCart className="w-6 h-6 text-primary-600" />
-          </div>
+          <Button className="gap-2" onClick={() => setIsNewDialogOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Nouvelle Commande
+          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
@@ -141,91 +199,59 @@ const Orders = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.id}</TableCell>
-                    <TableCell>{order.client}</TableCell>
-                    <TableCell>{order.date}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium 
-                        ${order.status === "En attente" ? "bg-yellow-100 text-yellow-800" : 
-                          order.status === "En cours" ? "bg-blue-100 text-blue-800" : 
-                          "bg-green-100 text-green-800"}`}>
-                        {order.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{order.total}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Détails de la Commande {order.id}</DialogTitle>
-                              <DialogDescription>
-                                <div className="mt-4 space-y-4">
-                                  <div>
-                                    <p className="font-medium">Client</p>
-                                    <p className="text-sm text-gray-600">{order.client}</p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Articles</p>
-                                    <p className="text-sm text-gray-600">{order.items}</p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Total</p>
-                                    <p className="text-sm text-gray-600">{order.total}</p>
-                                  </div>
-                                </div>
-                              </DialogDescription>
-                            </DialogHeader>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Select
-                          defaultValue={order.status}
-                          onValueChange={(value: Order["status"]) => 
-                            updateStatusMutation.mutate({ id: order.id, status: value })}
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="En attente">En attente</SelectItem>
-                            <SelectItem value="En cours">En cours</SelectItem>
-                            <SelectItem value="Livrée">Livrée</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(order.id)}>
-                                Supprimer
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                {paginatedOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      Aucune commande trouvée
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  paginatedOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.id}</TableCell>
+                      <TableCell>{order.client}</TableCell>
+                      <TableCell>
+                        {format(new Date(order.date), "dd/MM/yyyy", { locale: fr })}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium 
+                          ${order.status === "En attente" ? "bg-yellow-100 text-yellow-800" : 
+                            order.status === "En cours" ? "bg-blue-100 text-blue-800" : 
+                            "bg-green-100 text-green-800"}`}>
+                          {order.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{order.total}€</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => setEditingOrder(order)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => confirmDelete(order)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
 
@@ -271,6 +297,51 @@ const Orders = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Create Order Dialog */}
+        <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Nouvelle commande</DialogTitle>
+            </DialogHeader>
+            <OrderForm onSubmit={handleCreateOrder} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Order Dialog */}
+        <Dialog open={!!editingOrder} onOpenChange={(open) => !open && setEditingOrder(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier la commande</DialogTitle>
+            </DialogHeader>
+            <OrderForm order={editingOrder} onSubmit={handleUpdateOrder} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Order Details Dialog */}
+        <OrderDetailsDialog
+          order={selectedOrder}
+          open={!!selectedOrder}
+          onOpenChange={(open) => !open && setSelectedOrder(null)}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

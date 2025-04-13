@@ -55,10 +55,16 @@ export const ordersService = {
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {
-        if ('data' in response.data) {
-          return response.data.data as Order;
-        }
-        return response.data as Order;
+        const orderData = 'data' in response.data ? response.data.data : response.data;
+        
+        return {
+          id: orderData.id.toString(),
+          client: orderData.client_name || orderData.client || 'Client non défini',
+          date: orderData.date || new Date().toISOString(),
+          status: orderData.status || "En attente",
+          total: orderData.total?.toString() || "0",
+          items: typeof orderData.items === 'string' ? orderData.items : JSON.stringify(orderData.items || [])
+        };
       }
       
       throw new Error("Invalid order data received");
@@ -71,14 +77,29 @@ export const ordersService = {
   create: async (order: Omit<Order, "id" | "date">): Promise<Order> => {
     try {
       console.log("Creating order with data:", order);
-      const response = await api.post<ApiResponse<Order>>("/orders", order);
+      
+      // Prepare data for API - convert field names if needed
+      const apiData = {
+        client_name: order.client,
+        status: order.status,
+        total: order.total,
+        items: order.items,
+      };
+      
+      const response = await api.post<ApiResponse<Order>>("/orders", apiData);
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {
-        if ('data' in response.data) {
-          return response.data.data as Order;
-        }
-        return response.data as Order;
+        const orderData = 'data' in response.data ? response.data.data : response.data;
+        
+        return {
+          id: orderData.id.toString(),
+          client: orderData.client_name || orderData.client || 'Client non défini',
+          date: orderData.date || new Date().toISOString(),
+          status: orderData.status || "En attente",
+          total: orderData.total?.toString() || "0",
+          items: typeof orderData.items === 'string' ? orderData.items : JSON.stringify(orderData.items || [])
+        };
       }
       
       throw new Error("Invalid order response data");
@@ -90,14 +111,28 @@ export const ordersService = {
 
   update: async (id: string, order: Partial<Order>): Promise<Order> => {
     try {
-      const response = await api.put<ApiResponse<Order>>(`/orders/${id}`, order);
+      // Prepare data for API - convert field names if needed
+      const apiData: Record<string, any> = {};
+      
+      if (order.client) apiData.client_name = order.client;
+      if (order.status) apiData.status = order.status;
+      if (order.total) apiData.total = order.total;
+      if (order.items) apiData.items = order.items;
+      
+      const response = await api.put<ApiResponse<Order>>(`/orders/${id}`, apiData);
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {
-        if ('data' in response.data) {
-          return response.data.data as Order;
-        }
-        return response.data as Order;
+        const orderData = 'data' in response.data ? response.data.data : response.data;
+        
+        return {
+          id: orderData.id.toString(),
+          client: orderData.client_name || orderData.client || 'Client non défini',
+          date: orderData.date || new Date().toISOString(),
+          status: orderData.status || "En attente",
+          total: orderData.total?.toString() || "0",
+          items: typeof orderData.items === 'string' ? orderData.items : JSON.stringify(orderData.items || [])
+        };
       }
       
       throw new Error("Invalid order response data");
@@ -122,10 +157,16 @@ export const ordersService = {
       
       // Parse response based on structure
       if (response.data && typeof response.data === 'object') {
-        if ('data' in response.data) {
-          return response.data.data as Order;
-        }
-        return response.data as Order;
+        const orderData = 'data' in response.data ? response.data.data : response.data;
+        
+        return {
+          id: orderData.id.toString(),
+          client: orderData.client_name || orderData.client || 'Client non défini',
+          date: orderData.date || new Date().toISOString(),
+          status: orderData.status || "En attente",
+          total: orderData.total?.toString() || "0",
+          items: typeof orderData.items === 'string' ? orderData.items : JSON.stringify(orderData.items || [])
+        };
       }
       
       throw new Error("Invalid order response data");
@@ -134,73 +175,4 @@ export const ordersService = {
       throw error;
     }
   },
-
-  getByClient: async (clientId: string): Promise<Order[]> => {
-    try {
-      const response = await api.get<ApiResponse<Order[]>>(`/clients/${clientId}/orders`);
-      
-      // Similar parsing as getAll
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      
-      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-        const nestedData = response.data.data;
-        if (Array.isArray(nestedData)) {
-          return nestedData;
-        }
-      }
-      
-      return [];
-    } catch (error) {
-      console.error(`Error fetching orders for client ${clientId}:`, error);
-      return [];
-    }
-  },
-
-  getByAgency: async (agencyId: string): Promise<Order[]> => {
-    try {
-      const response = await api.get<ApiResponse<Order[]>>(`/agencies/${agencyId}/orders`);
-      
-      // Similar parsing as getAll
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      
-      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-        const nestedData = response.data.data;
-        if (Array.isArray(nestedData)) {
-          return nestedData;
-        }
-      }
-      
-      return [];
-    } catch (error) {
-      console.error(`Error fetching orders for agency ${agencyId}:`, error);
-      return [];
-    }
-  },
-
-  getByStatus: async (status: Order["status"]): Promise<Order[]> => {
-    try {
-      const response = await api.get<ApiResponse<Order[]>>(`/orders/status/${status}`);
-      
-      // Similar parsing as getAll
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-      
-      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-        const nestedData = response.data.data;
-        if (Array.isArray(nestedData)) {
-          return nestedData;
-        }
-      }
-      
-      return [];
-    } catch (error) {
-      console.error(`Error fetching orders with status ${status}:`, error);
-      return [];
-    }
-  }
 };

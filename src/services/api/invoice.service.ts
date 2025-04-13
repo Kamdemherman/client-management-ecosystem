@@ -1,6 +1,6 @@
 
 import { api } from "../api-config";
-import type { Invoice } from "@/types/invoice";
+import type { Invoice, PaymentStatus } from "@/types/invoice";
 
 // Define a type for possible API response formats
 type ApiResponse<T> = T | { data: T } | Record<string, any>;
@@ -20,7 +20,7 @@ export const invoiceService = {
           id: item.id.toString(),
           invoiceNumber: item.invoice_number || '',
           date: item.date || '',
-          client: item.client || 'Client non défini',
+          client: item.client_name || item.client || 'Client non défini',
           amount: item.amount || '0',
           paymentStatus: (item.payment_status || 'pending') as PaymentStatus,
           products: Array.isArray(item.products) ? item.products : []
@@ -36,7 +36,7 @@ export const invoiceService = {
             id: item.id.toString(),
             invoiceNumber: item.invoice_number || '',
             date: item.date || '',
-            client: item.client || 'Client non défini',
+            client: item.client_name || item.client || 'Client non défini',
             amount: item.amount || '0',
             paymentStatus: (item.payment_status || 'pending') as PaymentStatus,
             products: Array.isArray(item.products) ? item.products : []
