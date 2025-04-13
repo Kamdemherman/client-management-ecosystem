@@ -15,14 +15,32 @@ export const invoiceService = {
       
       // Check if the response is an array
       if (Array.isArray(response.data)) {
-        return response.data;
+        // Map API response to Invoice type
+        return response.data.map(item => ({
+          id: item.id.toString(),
+          invoiceNumber: item.invoice_number || '',
+          date: item.date || '',
+          client: item.client || 'Client non défini',
+          amount: item.amount || '0',
+          paymentStatus: (item.payment_status || 'pending') as PaymentStatus,
+          products: Array.isArray(item.products) ? item.products : []
+        }));
       } 
       
       // If response.data has a data property that might be an array
       if (response.data && typeof response.data === 'object' && 'data' in response.data) {
         const nestedData = response.data.data;
         if (Array.isArray(nestedData)) {
-          return nestedData;
+          // Map API response to Invoice type
+          return nestedData.map(item => ({
+            id: item.id.toString(),
+            invoiceNumber: item.invoice_number || '',
+            date: item.date || '',
+            client: item.client || 'Client non défini',
+            amount: item.amount || '0',
+            paymentStatus: (item.payment_status || 'pending') as PaymentStatus,
+            products: Array.isArray(item.products) ? item.products : []
+          }));
         }
       }
       

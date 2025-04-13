@@ -15,14 +15,28 @@ export const ordersService = {
       
       // Check if the response is an array
       if (Array.isArray(response.data)) {
-        return response.data;
+        return response.data.map(item => ({
+          id: item.id.toString(),
+          client: item.client_name || item.client || 'Client non défini',
+          date: item.date || new Date().toISOString(),
+          status: item.status || "En attente",
+          total: item.total?.toString() || "0",
+          items: typeof item.items === 'string' ? item.items : JSON.stringify(item.items || [])
+        }));
       } 
       
       // If response.data has a data property that might be an array
       if (response.data && typeof response.data === 'object' && 'data' in response.data) {
         const nestedData = response.data.data;
         if (Array.isArray(nestedData)) {
-          return nestedData;
+          return nestedData.map(item => ({
+            id: item.id.toString(),
+            client: item.client_name || item.client || 'Client non défini',
+            date: item.date || new Date().toISOString(),
+            status: item.status || "En attente",
+            total: item.total?.toString() || "0",
+            items: typeof item.items === 'string' ? item.items : JSON.stringify(item.items || [])
+          }));
         }
       }
       

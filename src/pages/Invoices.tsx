@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -25,17 +24,14 @@ const Invoices = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Ensure invoices is always an array, even if the API returns something else
   const { data, isLoading, error } = useQuery({
     queryKey: ['invoices'],
     queryFn: invoiceService.getAll,
   });
   
-  // Make sure invoices is always an array before using map()
   const invoices = Array.isArray(data) ? data : [];
 
-  // Log for debugging
-  console.log("Invoices data:", data);
+  console.log("Invoices data after processing:", invoices);
 
   const createMutation = useMutation({
     mutationFn: invoiceService.create,
@@ -197,8 +193,8 @@ const Invoices = () => {
                 ) : (
                   invoices.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell>{invoice.invoiceNumber}</TableCell>
-                      <TableCell>{invoice.client}</TableCell>
+                      <TableCell>{invoice.invoiceNumber || 'N/A'}</TableCell>
+                      <TableCell>{invoice.client || 'Client non défini'}</TableCell>
                       <TableCell>{format(new Date(invoice.date), "dd/MM/yyyy")}</TableCell>
                       <TableCell>{invoice.amount}€</TableCell>
                       <TableCell>
@@ -261,7 +257,6 @@ const Invoices = () => {
         </Card>
       </div>
 
-      {/* Dialog pour créer une nouvelle facture */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -271,7 +266,6 @@ const Invoices = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog pour modifier une facture */}
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -284,14 +278,12 @@ const Invoices = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Aperçu de la facture */}
       <InvoicePreview
         invoice={selectedInvoice}
         open={!!selectedInvoice}
         onOpenChange={(open) => !open && setSelectedInvoice(null)}
       />
 
-      {/* Confirmer la suppression */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

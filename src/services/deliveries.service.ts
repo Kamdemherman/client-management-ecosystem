@@ -23,14 +23,44 @@ export const deliveriesService = {
       
       // Check if the response is an array
       if (Array.isArray(response.data)) {
-        return response.data;
+        return response.data.map(item => ({
+          id: item.id.toString(),
+          orderId: item.order_id || item.orderId || '',
+          status: item.status || 'En attente',
+          scheduledDate: item.scheduled_date || item.scheduledDate || '',
+          deliveryDate: item.delivery_date || item.deliveryDate,
+          address: item.address || '',
+          driver: item.driver,
+          notes: item.notes,
+          clientId: item.client_id || item.clientId || '',
+          clientName: item.client_name || item.clientName || 'Client non défini',
+          agencyId: item.agency_id || item.agencyId || '',
+          agencyName: item.agency_name || item.agencyName || 'Agence non définie',
+          createdAt: item.created_at || item.createdAt || '',
+          updatedAt: item.updated_at || item.updatedAt || ''
+        }));
       } 
       
       // If response.data has a data property that might be an array
       if (response.data && typeof response.data === 'object' && 'data' in response.data) {
         const nestedData = response.data.data;
         if (Array.isArray(nestedData)) {
-          return nestedData;
+          return nestedData.map(item => ({
+            id: item.id.toString(),
+            orderId: item.order_id || item.orderId || '',
+            status: item.status || 'En attente',
+            scheduledDate: item.scheduled_date || item.scheduledDate || '',
+            deliveryDate: item.delivery_date || item.deliveryDate,
+            address: item.address || '',
+            driver: item.driver,
+            notes: item.notes,
+            clientId: item.client_id || item.clientId || '',
+            clientName: item.client_name || item.clientName || 'Client non défini',
+            agencyId: item.agency_id || item.agencyId || '',
+            agencyName: item.agency_name || item.agencyName || 'Agence non définie',
+            createdAt: item.created_at || item.createdAt || '',
+            updatedAt: item.updated_at || item.updatedAt || ''
+          }));
         }
       }
       
