@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clientsService } from "@/services/clients.service";
 import { ordersService } from "@/services/orders.service";
 import { agencies } from "@/services/agencies.service";
+import { inventoryService } from "@/services/inventory.service";
 import type { Delivery } from "@/types/delivery";
 import { format } from "date-fns";
 
@@ -22,6 +23,7 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
     orderId: delivery?.orderId || "",
     status: delivery?.status || "En attente",
     scheduledDate: delivery?.scheduledDate || format(new Date(), "yyyy-MM-dd"),
+    deliveryDate: delivery?.deliveryDate || format(new Date(), "yyyy-MM-dd"),
     address: delivery?.address || "",
     driver: delivery?.driver || "",
     notes: delivery?.notes || "",
@@ -29,7 +31,10 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
     clientName: delivery?.clientName || "",
     agencyId: delivery?.agencyId || "",
     agencyName: delivery?.agencyName || "",
+    products: delivery?.products || "[]",
   });
+
+  const [selectedProducts, setSelectedProducts] = useState<Array<{id: string, name: string, quantity: number}>>([]);
 
   // Fetch data for dropdowns
   const { data: clients = [] } = useQuery({
@@ -46,6 +51,33 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
     queryKey: ['agencies'],
     queryFn: agencies.getAll
   });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: inventoryService.getAll
+  });
+
+  // Parse existing products if delivery is provided
+  useEffect(() => {
+    if (delivery?.products) {
+      try {
+        const parsedProducts = typeof delivery.products === 'string' 
+          ? JSON.parse(delivery.products) 
+          : delivery.products;
+        setSelectedProducts(parsedProducts);
+      } catch (error) {
+        console.error("Failed to parse delivery products:", error);
+      }
+    }
+  }, [delivery]);
+
+  // Update products JSON when selected products change
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      products: JSON.stringify(selectedProducts)
+    }));
+  }, [selectedProducts]);
 
   // Set selected client data
   const handleClientChange = (clientId: string) => {
@@ -72,6 +104,33 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
     }
   };
 
+  // Add a product to the delivery
+  const handleAddProduct = (productId: string) => {
+    const productToAdd = products.find(p => p.id === productId);
+    if (!productToAdd) return;
+    
+    setSelectedProducts(prev => [
+      ...prev, 
+      {
+        id: productToAdd.id,
+        name: productToAdd.name,
+        quantity: 1
+      }
+    ]);
+  };
+
+  // Update product quantity
+  const handleUpdateQuantity = (index: number, quantity: number) => {
+    const newProducts = [...selectedProducts];
+    newProducts[index].quantity = quantity;
+    setSelectedProducts(newProducts);
+  };
+
+  // Remove product from delivery
+  const handleRemoveProduct = (index: number) => {
+    setSelectedProducts(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Submitting delivery data:", formData);
@@ -89,6 +148,11 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
     
     if (!formData.address) {
       alert("Veuillez saisir une adresse de livraison");
+      return;
+    }
+
+    if (selectedProducts.length === 0) {
+      alert("Veuillez ajouter au moins un produit");
       return;
     }
     
@@ -204,15 +268,84 @@ export function DeliveryForm({ delivery, onSubmit }: DeliveryFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="driver">Chauffeur</Label>
+          <Label htmlFor="deliveryDate">Date de livraison</Label>
           <Input
-            id="driver"
-            type="text"
-            value={formData.driver || ""}
-            onChange={(e) => setFormData({...formData, driver: e.target.value})}
-            placeholder="Nom du chauffeur"
+            id="deliveryDate"
+            type="date"
+            value={formData.deliveryDate || ''}
+            onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
+            required
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="driver">Chauffeur</Label>
+        <Input
+          id="driver"
+          type="text"
+          value={formData.driver || ""}
+          onChange={(e) => setFormData({...formData, driver: e.target.value})}
+          placeholder="Nom du chauffeur"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Produits</Label>
+        <Select onValueChange={handleAddProduct}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Ajouter un produit" />
+          </SelectTrigger>
+          <SelectContent>
+            {products.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        {selectedProducts.length > 0 ? (
+          <div className="border rounded-md mt-2">
+            <table className="w-full">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="py-2 px-4 text-left">Produit</th>
+                  <th className="py-2 px-4 text-center">Quantité</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedProducts.map((item, index) => (
+                  <tr key={index} className="border-t">
+                    <td className="py-2 px-4">{item.name}</td>
+                    <td className="py-2 px-4 text-center">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleUpdateQuantity(index, parseInt(e.target.value))}
+                        className="w-16 mx-auto text-center"
+                      />
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRemoveProduct(index)}
+                      >
+                        ✕
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Aucun produit sélectionné</p>
+        )}
       </div>
 
       <div className="space-y-2">
